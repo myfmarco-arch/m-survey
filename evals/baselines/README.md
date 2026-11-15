@@ -2,21 +2,23 @@
 
 本目录存放已发布的评测结果。命名：`<日期>-<组>-<N>.json`，附同名 `.md` 报告。
 
-| 文件 | 组 | N | 评审 | 可声明兼容 |
+| 文件 | 组 | N | 评审 | 对当前版本可声明兼容 |
 |---|---|---|---|---|
-| [2026-11-11-conformance-n3.json](2026-11-11-conformance-n3.json) | conformance | 3 | 同族自评 | **是**（附条件，见下） |
-| [2026-11-11-opus55-smoke-n1.json](2026-11-11-opus55-smoke-n1.json) | conformance | 1 | 同族自评 | 否 |
+| [2026-11-11-conformance-n3.json](2026-11-11-conformance-n3.json) | conformance | 3 | 同族自评 | 否：产生于旧快照，不覆盖当前 revision |
+| [2026-11-11-opus55-smoke-n1.json](2026-11-11-opus55-smoke-n1.json) | conformance | 1 | 同族自评 | 否：N=1，且不覆盖当前 revision |
 
-## 可声明兼容的基线（N=3）
+两份基线都只是历史记录。当前版本没有可用的兼容性声明。
+
+## 历史基线（N=3）
 
 2026-11-11 跑了全部 16 个 `conformance` 用例，各 3 次，48 次运行全部通过（每个用例 3/3）。按 [scoring.md](../scoring.md) 的规则，它满足：
 
 - 全部用例通过（`conformance` 组要求全通过）；
 - N = 3 ≥ 3，达到 ⌈2N/3⌉ 的通过次数。
 
-对应声明：**`m-survey-contract-v1@2026-11-11.3`**。
+当时可对应的声明是 **`m-survey-contract-v1@2026-11-11.3`**，只对当时的快照有效。
 
-注意：随后为写入本条结论，`evals/scoring.md` 的“当前状态”段落被修改，revision 已前移到 `2026-11-11.4`。那次改动只改文书记述，未动用例、规则或严重程度，因此本基线仍然成立；若后续再改任何合同文件，需重跑。
+此后合同 revision 多次前移，现值为 [contracts/manifest.json](../../contracts/manifest.json) 中的值。本基线不构成对任何后续 revision 的声明；要声明，须针对当前 revision 重跑全部 `conformance` 用例。
 
 ### 必须同时说明的限制
 

@@ -89,7 +89,7 @@ class ValidateSpecTest(unittest.TestCase):
         find_q(spec, "Q9")["display_logic"] = {"all": [{"question": "Q3", "selected_any": ["o1"]}]}
         self.assertIn("spec.logic-type", rule_ids(spec))
         spec = self.mutate()
-        find_q(spec, "Q9")["display_logic"] = {"all": [{"question": "Q3", "value_between": [4, 7]}]}
+        find_q(spec, "Q9")["display_logic"] = {"all": [{"question": "Q3", "value_between": [9, 12]}]}  # 超出 1–10
         self.assertIn("spec.logic-type", rule_ids(spec))
 
     def test_pipe_token(self):
@@ -429,7 +429,7 @@ class ReviewRegressionTest(unittest.TestCase):
         self.assertIn("adapter.semantic-preserved", self.compare_ids(md))
 
     def test_compare_detects_scale_change(self):
-        md = self.md.replace("评分：1–5 分；1 = 非常不满意，5 = 非常满意", "评分：0–10 分；0 = 非常满意，10 = 非常不满意")
+        md = self.md.replace("评分：1–10 分；1 = 非常不满意，10 = 非常满意", "评分：0–10 分；0 = 非常满意，10 = 非常不满意")
         self.assertIn("adapter.semantic-preserved", self.compare_ids(md))
 
     def test_compare_detects_option_text_and_label(self):
@@ -637,7 +637,7 @@ class ProfileRobustnessTest(unittest.TestCase):
     def test_profile_flag_works(self):
         import check_render
         out = subprocess.run([sys.executable, "scripts/render_markdown.py", str(EXAMPLE),
-                              "--profile", "references/products/survey-en-minimal/profile.yaml"],
+                              "--codes", "default", "--profile", "references/products/survey-en-minimal/profile.yaml"],
                              cwd=ROOT, capture_output=True, text=True)
         self.assertEqual(out.returncode, 0, out.stderr)
         rendered = out.stdout

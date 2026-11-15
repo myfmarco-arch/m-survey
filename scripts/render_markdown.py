@@ -3,7 +3,8 @@
 
 用法：
     python scripts/render_markdown.py spec.yaml [-o questionnaire.md]
-        [--codes default|explicit|ids] [--other-code 98] [--none-code 99] [--force]
+        [--codes default|explicit|ids] [--other-code 98] [--none-code 99]
+        [--design-table design.md] [--cleaning-rules cleaning.md] [--force]
 
 --codes default   缺少编码时按官方默认编码分配：普通选项 1、2、3……，其他 98，以上都没有 99。
                   已写明的编码保持不变。
@@ -12,6 +13,10 @@
 
 选择方式见 SKILL.md“可选的脚本检查”：按当前生效的编码配置选择，不默认使用 default。
 当前产品的问卷格式被 overlay 替换时，本脚本不适用。
+
+问卷文件只含卷首语和正文。题目设计表和清洗规则属于研究简报与方案：
+--design-table 写出题目设计表（题号、标签、研究问题、分析用途、选项来源、典型秒数），
+--cleaning-rules 写出清洗规则表。两个参数都写文件路径，内容不含标题，直接贴进方案对应小节。
 
 渲染前先运行 validate_spec 的全部检查；存在 error 时不渲染，除非使用 --force。
 本脚本是 Markdown 适配器在官方产品下的参考实现，overlay 可以使用自己的渲染方式。
@@ -36,6 +41,7 @@ from spec_lib import (  # noqa: E402
     SpecIndex,
     ROOT,
     assign_default_codes,
+    estimate_duration,
     load_profile,
     product_profile,
     load_yaml,
@@ -219,6 +225,8 @@ class Renderer:
                 labels.append(lg.token("terminate", "终止访问"))
             if o.get("quota"):
                 labels.append(lg.token("quota", "配额：{value}", value=o["quota"]))
+            if o.get("tag"):
+                labels.append(lg.token("analysis_tag", value=o["tag"]))
             rows.append(f"| {self.code_of(qid, o['id'])} | {_cell(text)} | {lg.separator('label', '；').join(labels)} |")
         return rows
 
@@ -254,9 +262,56 @@ class Renderer:
             out += [line, ""]
         if q.get("options"):
             out += ["| " + " | ".join(lg.table("options")) + " |", "|---:|---|---|"] + self.option_rows(qid, q) + [""]
+        if q.get("quality"):
+            out += [self.quality_line(qid, q["quality"]), ""]
         if q.get("program_note"):
             out += [lg.token("program_note", "程序说明：{text}", text=self.render_text(q["program_note"])), ""]
         return out
+
+    def quality_line(self, qid: str, qc: dict) -> str:
+        lg = self.profile
+        parts = []
+        if qc.get("pass"):
+            codes = "/".join(str(self.code_of(qid, o)) for o in qc["pass"])
+            parts.append(lg.token("quality_pass", codes=codes))
+        if qc.get("action"):
+            parts.append(lg.token(f"quality_action_{qc['action']}"))
+        if qc.get("note"):
+            parts.append(self.render_text(qc["note"]))
+        return lg.token("quality_line", text=lg.separator("label", "；").join(parts))
+
+    def cleaning_table_text(self) -> str:
+        """清洗规则表，写进研究简报与方案的样本方案小节。"""
+        lg = self.profile
+        rules = (self.spec.get("quality") or {}).get("cleaning_rules") or []
+        if not rules:
+            return ""
+        out = ["| " + " | ".join(lg.table("cleaning")) + " |", "|---|---|---|---|"]
+        for r in rules:
+            action = lg.token(f"cleaning_action_{r['action']}")
+            basis = self.render_text(r.get("basis", "")) or lg.token("not_stated")
+            out.append(f"| {r['id']} | {_cell(self.render_text(r['condition']))} | {action} | {_cell(basis)} |")
+        return "\n".join(out) + "\n"
+
+    def design_table_text(self) -> str:
+        """题目设计表，写进研究简报与方案，不放进问卷。"""
+        lg = self.profile
+        est = {row["id"]: row for row in estimate_duration(self.spec)["questions"]}
+        labels = self.profile.data.get("option_source_labels") or {}
+        out = ["| " + " | ".join(lg.table("design")) + " |", "|---|---|---|---|---|---:|"]
+        for qid in self.idx.order:
+            q = self.idx.questions[qid]
+            purpose = q.get("purpose") or {}
+            refs = "、".join(purpose.get("refs", []) or []) or purpose.get("type", "")
+            use = purpose.get("analysis") or purpose.get("note") or ""
+            src = q.get("option_source") or {}
+            src_text = labels.get(src.get("type"), src.get("type", "")) if src else ""
+            if src.get("note"):
+                src_text = f"{src_text}：{src['note']}" if src_text else src["note"]
+            secs = est.get(qid, {}).get("typical", 0)
+            out.append(f"| {qid} | {_cell(q['label'])} | {refs} | {_cell(self.render_text(use))} | "
+                       f"{_cell(src_text)} | {secs:g} |")
+        return "\n".join(out) + "\n"
 
     def render(self) -> str:
         meta = self.spec["meta"]
@@ -285,11 +340,14 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("spec", type=Path)
     ap.add_argument("-o", "--out", type=Path)
-    ap.add_argument("--codes", choices=["default", "explicit", "ids"], default="default")
+    ap.add_argument("--codes", choices=["default", "explicit", "ids"], required=True,
+                    help="编码方式：default 按产品默认编码分配，explicit 使用规格中写明的编码，ids 显示选项标识")
     ap.add_argument("--product", help="产品 id，默认读取 product.yaml 的 product")
     ap.add_argument("--profile", type=Path, help="直接指定 profile.yaml，优先于 --product")
     ap.add_argument("--other-code", type=_code_arg)
     ap.add_argument("--none-code", type=_code_arg)
+    ap.add_argument("--design-table", type=Path, help="把题目设计表写到这个文件，贴进研究简报与方案")
+    ap.add_argument("--cleaning-rules", type=Path, help="把清洗规则表写到这个文件，贴进样本方案")
     ap.add_argument("--force", action="store_true", help="存在验证 error 时仍然渲染（仅用于调试）")
     args = ap.parse_args(argv)
 
@@ -310,6 +368,10 @@ def main(argv: list[str] | None = None) -> int:
         args.out.write_text(md, encoding="utf-8")
     else:
         sys.stdout.write(md)
+    if args.design_table:
+        args.design_table.write_text(r.design_table_text(), encoding="utf-8")
+    if args.cleaning_rules:
+        args.cleaning_rules.write_text(r.cleaning_table_text(), encoding="utf-8")
     return 0
 
 

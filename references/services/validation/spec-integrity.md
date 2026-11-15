@@ -41,8 +41,20 @@ python scripts/validate_spec.py path/to/spec.yaml
 | `spec.empty-section` | 模块不为空 | `warning` | 是 |
 | `spec.eligible-usage` | `eligible` 只出现在被 `experience_gate` 引用的资格题中 | `warning` | 是 |
 | `spec.code-required` | 渲染时每个选项都能得到编码；不知道、不适用和拒答没有默认编码时必须显式填写 | `error` | 渲染时 |
+| `spec.text-residue` | 文本中没有表格公式错误（`#VALUE!`、`#REF!`、`#N/A` 等）、删除线残留或修订痕迹 | `error` | 是 |
+| `spec.range-overlap` | 同一题中的数值区间选项边界不重叠（例如“7–15 天”和“15–30 天”） | `warning` | 是 |
 
-脚本同时检查以下其他域的规则：`measurement.experience-required`、`measurement.scale-consistency` 和 `evidence.metric-linked`。
+脚本同时检查以下其他域的规则：`measurement.experience-required`、`measurement.scale-consistency`、`measurement.option-source`、`measurement.order-rating-before-reason`、`evidence.metric-linked`、`quality.attention-check`、`quality.cleaning-rules`、`quality.respectful-check`，以及 `burden.*` 中可计算的规则。
+
+### 不是本产品格式的问卷
+
+审核从其他工具导出的问卷（例如在线文档、表格或其他平台的导出稿）时，先运行宽松检查：
+
+```bash
+python scripts/lint_text.py questionnaire.md
+```
+
+它不依赖题目格式，只检查公式残留、删除线、区间重叠、量表方向不一致、重复题号和引用不存在的题号。结果是提示，需要人工确认；完整检查仍需把问卷整理成 QuestionnaireSpec。
 
 ### 使用资格的表达
 

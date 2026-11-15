@@ -23,7 +23,7 @@ from pathlib import Path
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from spec_lib import ZH_PROFILE, DRAFT_WORD_RE, PLACEHOLDER_RE, Profile, Report, load_profile_by_id, load_yaml  # noqa: E402
+from spec_lib import DRAFT_WORD_RE, PLACEHOLDER_RE, ZH_PROFILE, Profile, Report, load_yaml  # noqa: E402
 
 SRC_FMT = "references/products/survey-zh-default/questionnaire-format.md"
 SRC_SPEC = "references/services/validation/spec-integrity.md"
@@ -52,8 +52,6 @@ def heading_regex(profile: Profile) -> re.Pattern:
     return re.compile("^" + "".join(body) + r"\s*$")
 
 
-HEADING_RE = None  # 兼容旧引用；实际使用 heading_regex(profile)
-
 LABEL_TOKEN_KEYS = ["top", "bottom", "exclusive", "open_fill", "terminate", "fixed", "hidden",
                     "single_page", "reference_options", "loop_items"]
 
@@ -68,8 +66,9 @@ def is_allowed_label(label: str, profile: Profile) -> bool:
         return True
     # 带参数的标签和跳转：用产品文字做前缀判断，避免把语言写死在正则里
     quota_prefix = profile.token("quota", "配额：{value}", value="").rstrip("：: ")
+    tag_prefix = profile.token("analysis_tag", "维度：{value}", value="").rstrip("：: ")
     jump = re.compile(r"^(跳转至|jump to)\s*[A-Za-z][\w-]*$")
-    return label.startswith(quota_prefix) or bool(jump.match(label))
+    return label.startswith(quota_prefix) or label.startswith(tag_prefix) or bool(jump.match(label))
 NONE_TEXT_RE = re.compile(r"以上都没有|以上均无|以上都不是|以上皆无|都没有")
 
 
@@ -192,7 +191,7 @@ def appendix_re(profile: Profile) -> re.Pattern:
 
 
 def split_appendix(md: str, profile: Profile = ZH_PROFILE) -> tuple[str, str]:
-    """把正文和正文外的“需确认项 / 结果解释限制”分开。附录不参与题目解析。"""
+    """把正文和附录分开。问卷默认不带附录；用户要求附带“需确认项”等小节时，这些小节不参与题目解析。"""
     lines = md.splitlines()
     pat = appendix_re(profile)
     for i, line in enumerate(lines):
@@ -218,7 +217,7 @@ def scan_placeholders(md: str, report: Report, profile: Profile = ZH_PROFILE) ->
         m = PLACEHOLDER_RE.search(line)
         if m:
             report.add("spec.no-placeholder", "error", f"Markdown:L{ln}", f"正文包含未解释占位符“{m.group(0)}”。",
-                       "替换为实际内容；无法确定时移到正文外的需确认项。", SRC_SPEC)
+                       "替换为实际内容；无法确定时移到研究简报与方案的需确认项。", SRC_SPEC)
             continue
         m = DRAFT_WORD_RE.search(line)
         if m:
@@ -228,7 +227,7 @@ def scan_placeholders(md: str, report: Report, profile: Profile = ZH_PROFILE) ->
                            "如果这是受访者可选的正式选项，可以保留；如果是未完成内容，替换为实际选项。", SRC_SPEC)
             else:
                 report.add("spec.no-placeholder", "error", f"Markdown:L{ln}", f"正文包含未解释占位符“{m.group(0)}”。",
-                           "替换为实际内容；无法确定时移到正文外的需确认项。", SRC_SPEC)
+                           "替换为实际内容；无法确定时移到研究简报与方案的需确认项。", SRC_SPEC)
 
 
 def check(md: str, report: Report, profile: Profile = ZH_PROFILE) -> list[dict]:
@@ -238,7 +237,7 @@ def check(md: str, report: Report, profile: Profile = ZH_PROFILE) -> list[dict]:
     for ln, text in bad:
         report.add("format.heading", "error", f"Markdown:L{ln}",
                    f"题目标题不符合“##### 题号.【标签】【显示条件】题干【题型和规则】”格式：{text[:60]}",
-                   "按官方问卷格式补齐四个部分；无显示条件时写【ALL】。", SRC_FMT)
+                   "按官方问卷格式补齐五个部分；无显示条件时写【ALL】。", SRC_FMT)
     all_ids = [q["id"] for q in questions]
     option_header, matrix_header = profile.table("options"), profile.table("matrix")
     label_sep = profile.separator("label", "；")

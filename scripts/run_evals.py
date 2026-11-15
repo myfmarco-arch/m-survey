@@ -19,6 +19,14 @@
   python scripts/run_evals.py judge --out evals/runs/demo --cmd "claude -p"
   python scripts/run_evals.py report --out evals/runs/demo
 
+质量评测（quality 组）使用单独的子命令：同一需求分别在“安装 Skill”和“不安装 Skill”的工作区中生成，
+可另加人工撰写的参考交付物，打乱标识后由评审按 evals/quality/rubric.md 逐维打分，最后比较各条件的得分。
+
+  python scripts/run_evals.py quality prepare --runs 3 --out evals/runs/q1 [--reference-dir 参考目录]
+  python scripts/run_evals.py quality generate --out evals/runs/q1 --cmd "claude -p"
+  python scripts/run_evals.py quality judge --out evals/runs/q1 --cmd "claude -p"
+  python scripts/run_evals.py quality report --out evals/runs/q1
+
 被测命令和评审命令需要你自己确认可用；脚本只负责传入提示、保存输出和计算结果。
 """
 from __future__ import annotations
@@ -352,6 +360,279 @@ def cmd_list(args) -> int:
     return 0
 
 
+# ================================================================ quality 组
+QUALITY_CASES = "evals/quality/cases.yaml"
+RUBRIC = "evals/quality/rubric.md"
+QUALITY_JUDGE = "evals/quality/judge-prompt.md"
+LABELS = "ABCDEFGH"
+
+
+def rubric_dimensions() -> list[str]:
+    """量表中的维度键，按表格顺序。"""
+    text = (ROOT / RUBRIC).read_text(encoding="utf-8")
+    return re.findall(r"^\| `([a-z_]+)` \|", text, re.M)
+
+
+def load_quality() -> dict:
+    return load_yaml(ROOT / QUALITY_CASES)
+
+
+def blind_order(conditions: list[str], case_id: str, run: str, seed: str) -> dict[str, str]:
+    """确定性打乱：同一用例、同一运行、同一种子，标识分配固定。返回 {字母: 条件}。"""
+    import hashlib
+    keyed = sorted(conditions, key=lambda c: hashlib.sha256(f"{seed}:{case_id}:{run}:{c}".encode()).hexdigest())
+    return {LABELS[i]: c for i, c in enumerate(keyed)}
+
+
+def quality_judge_prompt(case: dict, responses: dict[str, str]) -> str:
+    template = (ROOT / QUALITY_JUDGE).read_text(encoding="utf-8")
+    rubric = (ROOT / RUBRIC).read_text(encoding="utf-8")
+    rubric = "## 评分方式" + rubric.split("## 评分方式", 1)[-1] if "## 评分方式" in rubric else rubric
+    rubric = re.sub(r"^## ", "### ", rubric, flags=re.M)  # 嵌入评审提示时降一级标题
+    fixtures = fixture_block(case, strip_notes=True)
+    blocks = "\n\n".join(f"### 交付物 {label}\n\n{text.strip()}" for label, text in sorted(responses.items()))
+    return template.format(
+        rubric=rubric.strip(),
+        request=clean(case["request"]),
+        fixtures=("用户提供的附件：\n\n" + fixtures) if fixtures else "",
+        responses=blocks,
+        dimensions="、".join(rubric_dimensions()),
+    )
+
+
+def validate_quality_judgement(data: dict, labels: list[str], dims: list[str]) -> str:
+    """返回空字符串表示有效；否则返回原因。"""
+    scores = data.get("scores")
+    if not isinstance(scores, dict) or set(scores) != set(labels):
+        return f"scores 的字母应为 {sorted(labels)}"
+    for label in labels:
+        for d in dims:
+            item = (scores[label] or {}).get(d)
+            score = item.get("score") if isinstance(item, dict) else None
+            if not isinstance(score, int) or isinstance(score, bool) or not 1 <= score <= 5:
+                return f"{label}.{d} 的分数不是 1–5 的整数"
+    ranking = data.get("ranking")
+    if not isinstance(ranking, list) or sorted(ranking) != sorted(labels):
+        return "ranking 必须包含全部字母各一次"
+    return ""
+
+
+def q_prepare(args) -> int:
+    data = load_quality()
+    out = Path(args.out)
+    conditions = list(args.conditions or data.get("conditions") or ["skill", "baseline"])
+    ref_dir = Path(args.reference_dir) if args.reference_dir else None
+    manifest = {"created": dt.datetime.now().isoformat(timespec="seconds"), "runs": args.runs,
+                "skill_version": load_yaml(ROOT / "product.yaml").get("version"), "seed": args.seed, "cases": []}
+    for case in data.get("cases", []):
+        if args.case and case["id"] not in args.case:
+            continue
+        case_conditions = list(conditions)
+        ref = ref_dir / f"{case['id']}.md" if ref_dir else None
+        if ref and ref.exists():
+            case_conditions.append("reference")
+        case_dir = out / "quality" / case["id"]
+        for i in range(1, args.runs + 1):
+            for cond in case_conditions:
+                run_dir = case_dir / f"run-{i}" / cond
+                run_dir.mkdir(parents=True, exist_ok=True)
+                (run_dir / "prompt.md").write_text(skill_prompt(case), encoding="utf-8")
+                if cond == "reference":
+                    shutil.copyfile(ref, run_dir / "response.md")
+        (case_dir / "case.json").write_text(json.dumps({**case, "conditions": case_conditions}, ensure_ascii=False, indent=2),
+                                            encoding="utf-8")
+        manifest["cases"].append(case["id"])
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "quality-manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"已准备 {len(manifest['cases'])} 个质量用例 × {args.runs} 次运行：{out}")
+    return 0
+
+
+def q_iter(out: Path):
+    manifest = json.loads((out / "quality-manifest.json").read_text(encoding="utf-8"))
+    for cid in manifest["cases"]:
+        case_dir = out / "quality" / cid
+        case = json.loads((case_dir / "case.json").read_text(encoding="utf-8"))
+        for run_dir in sorted(case_dir.glob("run-*")):
+            yield case, run_dir
+
+
+def q_generate(args) -> int:
+    out = Path(args.out)
+    failures = 0
+    for case, run_dir in q_iter(out):
+        for cond in case["conditions"]:
+            if cond == "reference":
+                continue
+            cdir = run_dir / cond
+            target = cdir / "response.md"
+            if target.exists() and not args.overwrite:
+                continue
+            if cond == "skill":
+                ws = make_workspace(cdir, {"overlays": []}, args.install_path, out)
+            else:
+                ws = cdir / "workspace"
+                if ws.exists():
+                    shutil.rmtree(ws)
+                ws.mkdir(parents=True)
+            prompt = (cdir / "prompt.md").read_text(encoding="utf-8")
+            try:
+                code, stdout, stderr = run_cmd(args.cmd, prompt, ws, args.timeout)
+            except subprocess.TimeoutExpired:
+                code, stdout, stderr = -1, "", "timeout"
+            if code != 0 or not stdout.strip():
+                failures += 1
+                (cdir / "generate.error.txt").write_text(f"exit={code}\n{stderr}", encoding="utf-8")
+                print(f"[失败] {case['id']}/{run_dir.name}/{cond}：exit={code}")
+                continue
+            target.write_text(stdout, encoding="utf-8")
+            if not args.keep_workspace:
+                shutil.rmtree(ws)
+            print(f"[完成] {case['id']}/{run_dir.name}/{cond}")
+    return 1 if failures else 0
+
+
+def q_judge(args) -> int:
+    out = Path(args.out)
+    manifest = json.loads((out / "quality-manifest.json").read_text(encoding="utf-8"))
+    seed = str(manifest.get("seed", "m-survey"))
+    dims = rubric_dimensions()
+    failures = 0
+    for case, run_dir in q_iter(out):
+        target = run_dir / "judgement.json"
+        if target.exists() and not args.overwrite:
+            continue
+        present = [c for c in case["conditions"] if (run_dir / c / "response.md").exists()]
+        if len(present) < 2:
+            print(f"[跳过] {case['id']}/{run_dir.name}：可比较的回答少于 2 份")
+            continue
+        mapping = blind_order(present, case["id"], run_dir.name, seed)
+        (run_dir / "blind.json").write_text(json.dumps(mapping, ensure_ascii=False, indent=2), encoding="utf-8")
+        responses = {label: (run_dir / cond / "response.md").read_text(encoding="utf-8") for label, cond in mapping.items()}
+        prompt = quality_judge_prompt(case, responses)
+        (run_dir / "judge-prompt.txt").write_text(prompt, encoding="utf-8")
+        try:
+            code, stdout, stderr = run_cmd(args.cmd, prompt, run_dir, args.timeout)
+            data = extract_json(stdout)
+            problem = validate_quality_judgement(data, list(mapping), dims)
+            if problem:
+                raise ValueError(problem)
+            data["judge"] = args.cmd
+            target.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+            print(f"[完成] {case['id']}/{run_dir.name}")
+        except Exception as exc:  # noqa: BLE001
+            failures += 1
+            (run_dir / "judge.error.txt").write_text(str(exc), encoding="utf-8")
+            print(f"[失败] {case['id']}/{run_dir.name}：{exc}")
+    return 1 if failures else 0
+
+
+def q_aggregate(records: list[dict], dims: list[str]) -> dict:
+    """records：[{case, run, scores: {条件: {维度: 分}}, rank: [条件…]}]。返回各条件均分、差值和胜率。"""
+    by_cond: dict[str, dict[str, list[int]]] = {}
+    for r in records:
+        for cond, sc in r["scores"].items():
+            for d in dims:
+                by_cond.setdefault(cond, {k: [] for k in dims})[d].append(sc[d])
+    means = {c: {d: round(sum(v) / len(v), 2) for d, v in ds.items() if v} for c, ds in by_cond.items()}
+    for c in means:
+        means[c]["overall"] = round(sum(means[c][d] for d in dims) / len(dims), 2)
+    delta = {}
+    if "skill" in means and "baseline" in means:
+        delta = {d: round(means["skill"][d] - means["baseline"][d], 2) for d in dims + ["overall"]}
+    wins = ties = losses = 0
+    for r in records:
+        if "skill" in r["scores"] and "baseline" in r["scores"]:
+            s = sum(r["scores"]["skill"].values())
+            b = sum(r["scores"]["baseline"].values())
+            wins += s > b
+            ties += s == b
+            losses += s < b
+    first = {}
+    for r in records:
+        if r["rank"]:
+            first[r["rank"][0]] = first.get(r["rank"][0], 0) + 1
+    return {"means": means, "delta_skill_minus_baseline": delta,
+            "skill_vs_baseline": {"wins": wins, "ties": ties, "losses": losses}, "ranked_first": first,
+            "n_comparisons": len(records)}
+
+
+def q_report(args) -> int:
+    out = Path(args.out)
+    manifest = json.loads((out / "quality-manifest.json").read_text(encoding="utf-8"))
+    dims = rubric_dimensions()
+    records, missing = [], []
+    for case, run_dir in q_iter(out):
+        jp, bp = run_dir / "judgement.json", run_dir / "blind.json"
+        if not jp.exists() or not bp.exists():
+            missing.append(f"{case['id']}/{run_dir.name}")
+            continue
+        mapping = json.loads(bp.read_text(encoding="utf-8"))
+        data = json.loads(jp.read_text(encoding="utf-8"))
+        problem = validate_quality_judgement(data, list(mapping), dims)
+        if problem:
+            missing.append(f"{case['id']}/{run_dir.name}（{problem}）")
+            continue
+        scores = {mapping[l]: {d: data["scores"][l][d]["score"] for d in dims} for l in mapping}
+        records.append({"case": case["id"], "run": run_dir.name, "scores": scores,
+                        "rank": [mapping[l] for l in data["ranking"]]})
+    agg = q_aggregate(records, dims)
+    lines = ["# 质量评测报告", "", f"- Skill 版本：{manifest.get('skill_version')}", f"- 被测模型：{args.model or '未填写'}",
+             f"- 评审方式：{args.judge_label or '未填写'}", f"- 有效比较次数：{agg['n_comparisons']}", ""]
+    conds = sorted(agg["means"])
+    lines += ["## 各条件均分（1–5）", "", "| 维度 | " + " | ".join(conds) + (" | skill − baseline |" if agg["delta_skill_minus_baseline"] else " |"),
+              "|---|" + "---:|" * (len(conds) + (1 if agg["delta_skill_minus_baseline"] else 0))]
+    for d in dims + ["overall"]:
+        row = [f"{agg['means'][c].get(d, '')}" for c in conds]
+        if agg["delta_skill_minus_baseline"]:
+            row.append(f"{agg['delta_skill_minus_baseline'][d]:+}")
+        lines.append(f"| {d} | " + " | ".join(row) + " |")
+    s = agg["skill_vs_baseline"]
+    lines += ["", f"skill 对 baseline：胜 {s['wins']}，平 {s['ties']}，负 {s['losses']}。",
+              f"排名第一的次数：{agg['ranked_first']}。", "",
+              "比较次数少时，差值只说明方向。结论需要在更多用例、更多次运行和独立评审下确认。"]
+    if missing:
+        lines += ["", "未计入：" + "；".join(missing)]
+    (out / "quality-results.json").write_text(json.dumps({"manifest": manifest, "model": args.model,
+                                                           "judge": args.judge_label, **agg, "records": records},
+                                                          ensure_ascii=False, indent=2), encoding="utf-8")
+    (out / "quality-report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print("\n".join(lines))
+    return 0 if not missing else 1
+
+
+def add_quality_parser(sub) -> None:
+    q = sub.add_parser("quality", help="质量评测：skill 与 baseline 盲评比较")
+    qs = q.add_subparsers(dest="qcommand", required=True)
+    p = qs.add_parser("prepare")
+    p.add_argument("--runs", type=int, default=3)
+    p.add_argument("--case", nargs="*")
+    p.add_argument("--conditions", nargs="*", help="默认读取 cases.yaml 的 conditions")
+    p.add_argument("--reference-dir", help="人工撰写参考交付物所在目录，文件名为 <用例 id>.md")
+    p.add_argument("--seed", default="m-survey", help="盲评标识的打乱种子")
+    p.add_argument("--out", default=f"evals/runs/quality-{dt.date.today().isoformat()}")
+    p.set_defaults(func=q_prepare)
+    p = qs.add_parser("generate")
+    p.add_argument("--out", required=True)
+    p.add_argument("--cmd", required=True)
+    p.add_argument("--install-path", default=".claude/skills/m-survey")
+    p.add_argument("--timeout", type=int, default=1800)
+    p.add_argument("--overwrite", action="store_true")
+    p.add_argument("--keep-workspace", action="store_true")
+    p.set_defaults(func=q_generate)
+    p = qs.add_parser("judge")
+    p.add_argument("--out", required=True)
+    p.add_argument("--cmd", required=True)
+    p.add_argument("--timeout", type=int, default=900)
+    p.add_argument("--overwrite", action="store_true")
+    p.set_defaults(func=q_judge)
+    p = qs.add_parser("report")
+    p.add_argument("--out", required=True)
+    p.add_argument("--model")
+    p.add_argument("--judge-label")
+    p.set_defaults(func=q_report)
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="command", required=True)
@@ -389,6 +670,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--model", help="被测模型名称，写入报告")
     p.add_argument("--judge-label", help="评审方式，例如 human 或模型名称")
     p.set_defaults(func=cmd_report)
+
+    add_quality_parser(sub)
 
     args = ap.parse_args(argv)
     return args.func(args)

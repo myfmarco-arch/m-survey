@@ -27,7 +27,8 @@ from spec_lib import Report  # noqa: E402
 
 METHOD_SECTIONS = ["解决的问题", "适用条件", "不适用条件", "必需输入", "设计和样本要求", "产生的输出",
                    "允许的结论", "不允许的结论", "验证规则", "来源与许可"]
-RULE_DOMAINS = ("evidence", "measurement", "sampling", "privacy", "spec", "routing", "method", "overlay", "adapter", "format")
+RULE_DOMAINS = ("evidence", "measurement", "sampling", "privacy", "spec", "routing", "method", "overlay", "adapter", "format",
+                "quality", "burden", "tracking")
 RULE_DEF_RE = re.compile(r"^\|\s*`((?:%s)\.[a-z0-9.-]+)`\s*\|" % "|".join(RULE_DOMAINS), re.M)
 RULE_REF_RE = re.compile(r"`((?:%s)\.[a-z0-9][a-z0-9.-]*[a-z0-9])`" % "|".join(RULE_DOMAINS))
 SKIP_DIRS = {".git", "runs", "__pycache__", "node_modules"}
@@ -89,7 +90,7 @@ def walk_paths(node):
 def check_product(c: Checker) -> dict:
     product = load_yaml(ROOT / "product.yaml")
     for key in ("schema_version", "id", "version", "framework_contract", "contracts", "validation", "modules",
-                "product", "adapters", "overlays", "evals"):
+                "products", "default_product", "product", "adapters", "overlays", "evals"):
         if key not in product:
             c.err(f"product.yaml：缺少 {key}")
     for path in walk_paths(product):
@@ -103,7 +104,7 @@ def check_product(c: Checker) -> dict:
         if not (files or {}).get("profile"):
             c.err(f"product.yaml：产品 {pid} 缺少 profile")
         for key, rel_path in (files or {}).items():
-            if key in {"profile", "readme"} or key.endswith("_format") or key in {"workflow", "writing", "coding", "templates", "case_index"}:
+            if key == "profile" or key.endswith("_format") or key in {"workflow", "writing", "coding", "templates", "case_index"}:
                 if not (ROOT / rel_path).exists():
                     c.err(f"product.yaml：产品 {pid} 的 {key} 路径不存在：{rel_path}")
     if product.get("product") and product["product"] not in products:
@@ -274,10 +275,6 @@ def check_method_file(c: Checker, path: Path, mid: str) -> None:
     for r in rules:
         if not r.startswith(f"method.{mid}."):
             c.err(f"{rel(path)}：规则 {r} 应以 method.{mid}. 开头")
-
-
-PROFILE_KEYS = {"schema_version", "id", "language", "codes", "tables", "type_labels", "tokens", "headings",
-                "separators", "appendices"}
 
 
 def check_profiles(c: Checker, product: dict) -> None:
@@ -532,6 +529,55 @@ def check_examples(c: Checker) -> None:
                 c.err(f"{rel(md_path)}：{r.rule_id} {r.target} {r.message}")
 
 
+# ------------------------------------------------------------------ 质量评测
+def check_quality_suite(c: Checker, product: dict) -> None:
+    rel_path = (product.get("evals") or {}).get("quality")
+    if not rel_path:
+        c.warn("product.yaml：evals.quality 未登记，质量评测无法运行")
+        return
+    data = load_yaml(ROOT / rel_path)
+    rubric = (ROOT / "evals/quality/rubric.md").read_text(encoding="utf-8")
+    dims = re.findall(r"^\| `([a-z_]+)` \|", rubric, re.M)
+    if not dims:
+        c.err("evals/quality/rubric.md：没有找到维度表（| `键` | 维度 | …）")
+    judge = (ROOT / "evals/quality/judge-prompt.md").read_text(encoding="utf-8")
+    for slot in ("{rubric}", "{request}", "{responses}", "{dimensions}", "{fixtures}"):
+        if slot not in judge:
+            c.err(f"evals/quality/judge-prompt.md：缺少占位符 {slot}")
+    if data.get("version") != 1 or data.get("suite") != "quality":
+        c.err(f"{rel_path}：version 应为 1，suite 应为 quality")
+    if not set(data.get("conditions") or []) <= {"skill", "baseline"}:
+        c.err(f"{rel_path}：conditions 只能是 skill 和 baseline（人工参考用 --reference-dir 提供）")
+    ids = [x.get("id") for x in data.get("cases") or []]
+    for d in sorted({i for i in ids if ids.count(i) > 1}):
+        c.err(f"{rel_path}：用例 ID 重复：{d}")
+    for case in data.get("cases") or []:
+        cid = case.get("id")
+        for key in ("id", "request", "brief_type"):
+            if not case.get(key):
+                c.err(f"{rel_path}:{cid}：缺少 {key}")
+        for f in case.get("focus") or []:
+            if f not in dims:
+                c.err(f"{rel_path}:{cid}：focus 中的 {f} 不是量表维度 {dims}")
+        for fx in case.get("fixtures") or []:
+            if not (ROOT / fx).exists():
+                c.err(f"{rel_path}:{cid}：夹具不存在：{fx}")
+
+
+def check_timing(c: Checker, product: dict) -> None:
+    rel_path = ((product.get("modules") or {}).get("knowledge") or {}).get("timing_parameters")
+    if not rel_path:
+        return
+    data = load_yaml(ROOT / rel_path) or {}
+    for key in ("reading", "answer_seconds", "defaults", "thresholds", "calibration"):
+        if key not in data:
+            c.err(f"{rel_path}：缺少 {key}")
+    for key in ("single", "multi", "scale", "matrix_row", "numeric", "open_text_required", "open_text_optional",
+                "ranking_per_item"):
+        if key not in (data.get("answer_seconds") or {}):
+            c.err(f"{rel_path}：answer_seconds 缺少 {key}")
+
+
 LOCAL_KEYS = {"schema_version", "product", "products", "overlays", "validation"}
 
 
@@ -581,7 +627,8 @@ def main() -> int:
     rules = collect_rules(c)
     check_rule_refs(c, rules)
     methods = set(product["modules"]["methods"])
-    known = methods | {"sample-planning", "spss", "codebook", "markdown"}
+    known = methods | {"sample-planning", "spss", "codebook", "markdown", "question-craft", "data-quality",
+                       "respondent-burden", "tracking"}
     for suite, rel_path in (("conformance", product["evals"]["conformance"]), ("modules", product["evals"]["modules"]),
                             ("product", product["evals"]["product"])):
         cases = check_eval_file(c, ROOT / rel_path, rules, suite, known)
@@ -594,6 +641,8 @@ def main() -> int:
         if not (ROOT / entry).is_file():
             c.err(f"product.yaml：overlay 不存在：{entry}")
     check_examples(c)
+    check_quality_suite(c, product)
+    check_timing(c, product)
 
     for w in c.warnings:
         print(f"[warning] {w}")

@@ -1,6 +1,6 @@
 # M-survey
 
-中文定量问卷设计 Skill。它帮助用户研究员从业务问题出发选择方法、规划样本、写出可执行可分析的问卷，并审核已有问卷。
+中文定量问卷设计 Skill。它帮助用户研究员从业务问题出发选择方法、规划样本，写出资深研究负责人认可的问卷：每道题有用途，题序不污染，选项有来源，带质量控制和时长估算，编程可以直接实现。它也能审核已有问卷，包括从其他工具导出的问卷。
 
 *A Claude / Codex skill for designing, revising and auditing Chinese quantitative research questionnaires, with method guidance (KANO, MaxDiff, conjoint, SUS, NPS…), sample planning, validation rules, and a customizable overlay mechanism.*
 
@@ -9,14 +9,17 @@
 | 你说 | 它做 |
 |---|---|
 | “新功能上线两个月了，想知道该先改哪些问题” | 澄清业务决策，给出研究简报、方法方案、样本建议和完整问卷 |
-| “帮我审核这份问卷” | 按严重程度列出题号、问题、影响和修改建议 |
+| “帮我审核这份问卷” | 按严重程度列出题号、问题、影响和修改建议；整卷检查题序、选项来源、质量控制、时长和可比性 |
+| “做第二波，要和第一波比” | 逐题判断可比、需加注和不可比，量表改了会直接指出 |
 | “这份问卷已经回收过，加一个选项” | 保留原题号和编码，只改需要改的部分，并提示跨期可比性 |
 | “12 个功能该用 KANO 还是 MaxDiff？” | 说明各自回答什么问题、成立前提和结论边界 |
 | “应该用 PSM、Gabor-Granger 还是价格联合分析？” | 按定价决策选择方法，并限制真实支付和销量主张 |
 | “做季度品牌健康追踪” | 固定核心 KPI、样本和测量口径，分开轮换诊断模块 |
 | “样本量要多少？” | 写出计算参数和公式；参数不足时只给情景，不拍数字 |
 
-它会主动拦住的常见问题：让没用过的人评价使用体验、把满意度当成真实行为、把便利样本说成全国代表、把工作译文包装成正式量表、给未成年人生成可投放问卷、无依据给出 n=500。
+它默认会做到的事：总体评价放在卖点曝光之前，先评分再问原因；选项列表写明来源，自拟的请需求方校准；宣传文案改成用户能观察到的描述；按投放渠道加甄别排除、指令题和清洗规则；按题估算时长，卷首语不乱承诺。
+
+它会主动拦住的常见问题：让没用过的人评价使用体验、把满意度当成真实行为、把便利样本说成全国代表、把工作译文包装成正式量表、给未成年人生成可投放问卷、无依据给出 n=500、改了量表还说能和上一波比。
 
 它不做：普通报名表、定性访谈大纲、问卷平台编程、已回收数据的清洗和统计分析。
 
@@ -56,12 +59,15 @@ pip install -r requirements.txt
 
 ## 定制成你团队的版本
 
-不需要改官方文件。复制 [overlay 示例](references/overlays/example-custom/)，按需修改，再在 [product.yaml](product.yaml) 中启用：
+不需要改官方文件。复制 [overlay 示例](references/overlays/example-custom/)，按需修改，再在根目录的 `local.yaml` 中启用：
 
 ```yaml
+schema_version: 1
 overlays:
   - references/overlays/my-team/overlay.yaml
 ```
+
+官方产品只放通用的研究工艺。团队自己的东西适合放进私有 overlay：组织统一的满意度量表和分流阈值、历史追踪题原文、本行业的产品和版本名称、各品牌功能叫法对照、用历史问卷校准过的时长参数。这些内容通常不应提交到公开仓库。
 
 overlay 可以扩展或替换写作规范、问卷格式、默认编码和工作流，也可以新增或替换方法模块。每一项都要写明 `extend` 还是 `replace`。合同和官方验证规则不能被覆盖。完整规则见 [组合与覆盖合同](references/contracts/overlay-contract.md)。
 
@@ -76,16 +82,20 @@ overlay 可以扩展或替换写作规范、问卷格式、默认编码和工作
 | 仓库一致性 | `python scripts/check_repo.py` | 链接、版本、CSV、规则定义、评测结构、overlay、示例 |
 | 问卷规格 | `python scripts/validate_spec.py spec.yaml` | 题号、引用、排他、编码、使用资格、占位符 |
 | 问卷文稿 | `python scripts/check_render.py questionnaire.md --spec spec.yaml` | 格式和与规格的一致性 |
+| 时长估算 | `python scripts/estimate_duration.py spec.yaml` | 典型路径和最长路径；参数需用历史数据校准 |
+| 跨波对比 | `python scripts/diff_waves.py previous.yaml spec.yaml` | 可比、需加注、不可比清单 |
+| 外部问卷 | `python scripts/lint_text.py questionnaire.md` | 公式残留、区间重叠、量表方向、重复题号 |
 | 脚本测试 | `python -m unittest discover -s tests` | 检查脚本本身的回归测试 |
 | 行为评测 | `python scripts/run_evals.py …` | 用真实模型运行 Skill 并评审，见 [evals/README.md](evals/README.md) |
+| 质量评测 | `python scripts/run_evals.py quality …` | 装与不装 Skill 各生成一份，盲评比较 8 个质量维度 |
 
-前四项在 GitHub Actions 中自动运行。行为评测需要调用模型，在本地运行。
+结构类检查在 GitHub Actions 中自动运行。行为评测和质量评测需要调用模型，在本地运行。
 
 ## 兼容性状态
 
-当前 `0.5.0` **不声明合同兼容性**。本版本修改了研究产物合同和模块合同。必须针对当前 [合同 revision](contracts/manifest.json) 重新运行 `conformance` 行为评测，并达到 [评测规则](evals/README.md) 的声明门槛，才能发布新的兼容性声明。
+当前 `0.6.0` **不声明合同兼容性**。本版本修改了验证合同和 QuestionnaireSpec schema。必须针对当前 [合同 revision](contracts/manifest.json) 重新运行 `conformance` 行为评测，并达到 [评测规则](evals/README.md) 的声明门槛，才能发布新的兼容性声明。
 
-历史基线 [2026-11-11-conformance-n3](evals/baselines/2026-11-11-conformance-n3.json) 覆盖旧快照。它记录了当时 16 个兼容性用例各运行 3 次、48 次全部通过的结果，但不能证明当前 `0.5.0` 的行为兼容性。详见 [基线说明](evals/baselines/README.md)。
+历史基线 [2026-11-11-conformance-n3](evals/baselines/2026-11-11-conformance-n3.json) 覆盖旧快照。它记录了当时 16 个兼容性用例各运行 3 次、48 次全部通过的结果，但不能证明当前 `0.6.0` 的行为兼容性。详见 [基线说明](evals/baselines/README.md)。
 
 结构检查通过只说明文件自洽、规则引用完整、示例可复现，不说明模型会按规则行事。基线的产生方法和发表条件见 [evals/README.md](evals/README.md)。
 

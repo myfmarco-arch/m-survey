@@ -7,11 +7,11 @@
 | 文件 | 内容 | 对应产物 |
 |---|---|---|
 | [01-request.md](01-request.md) | 用户提交的需求 | 输入 |
-| [02-research-plan.md](02-research-plan.md) | 研究简报、方法方案、样本方案和验证摘要 | ResearchBrief、MethodPlan、SamplePlan、ValidationResult |
+| [02-research-plan.md](02-research-plan.md) | 研究简报与方案：一屏简报、研究目标、方法方案、样本方案（含清洗规则）、题目设计表、需确认项、后续建议 | ResearchBrief、MethodPlan、SamplePlan |
 | [spec.yaml](spec.yaml) | 机器可读的问卷规格 | QuestionnaireSpec |
-| [03-questionnaire.md](03-questionnaire.md) | 官方产品格式的最终问卷 | Deliverable |
+| [03-questionnaire.md](03-questionnaire.md) | 最终问卷，只有卷首语和正文 | Deliverable |
 
-`03-questionnaire.md` 由脚本从 `spec.yaml` 生成，不手工修改。
+`03-questionnaire.md` 由脚本从 `spec.yaml` 生成，不手工修改。`02-research-plan.md` 里的题目设计表和清洗规则也由脚本生成后贴入。
 
 ## 复现
 
@@ -20,7 +20,11 @@
 ```bash
 pip install -r requirements.txt
 python scripts/validate_spec.py examples/expense-app-autocat/spec.yaml
-python scripts/render_markdown.py examples/expense-app-autocat/spec.yaml -o examples/expense-app-autocat/03-questionnaire.md
+python scripts/render_markdown.py examples/expense-app-autocat/spec.yaml --codes default \
+    -o examples/expense-app-autocat/03-questionnaire.md
+# 需要题目设计表和清洗规则时，另写到临时文件再贴进方案
+python scripts/render_markdown.py examples/expense-app-autocat/spec.yaml --codes default \
+    --design-table /tmp/design.md --cleaning-rules /tmp/cleaning.md
 python scripts/check_render.py examples/expense-app-autocat/03-questionnaire.md --spec examples/expense-app-autocat/spec.yaml
 ```
 

@@ -33,7 +33,7 @@
 | U01 | 问卷通过什么方式实施？目标完成时长是多少？能否使用图片、视频或交互原型？ | mode；duration；stimulus_support | 影响题型、刺激材料、移动端布局和质量控制。 |
 | U02 | 需要哪些语言和地区版本？是否已有正式翻译、回译或本地化要求？ | languages；markets；translation_status | 影响量表版本、测量等值性和跨市场比较。 |
 | U03 | 是否涉及未成年人、健康、收入、身份、位置或其他敏感信息？是否有伦理、隐私或合规要求？ | sensitive_topics；ethics；privacy | 触发 [隐私基线](../../services/validation/privacy-baseline.md)；未成年人默认停止生成可投放版本。 |
-| U04 | 是否有既有问卷、历史基准、日志、客服记录、交易数据或正式量表必须沿用？ | existing_instruments；benchmarks；behavior_data | 影响题项复用、口径连续性和辅助指标。 |
+| U04 | 是否有上一波问卷、历史基准、问题清单、舆情或客服分类、埋点日志或正式量表可以沿用？ | existing_instruments；benchmarks；option_sources；behavior_data | 影响题项复用、口径连续性、封闭选项列表的来源和辅助指标。需要问题、原因或功能列表而用户没有提供材料时，放进首轮提问。 |
 | U05 | 最终要交付什么：问卷文档、配额表、平台脚本、分析方案、交叉表模板还是报告？ | deliverables | 决定输出结构，以及是否需要变量命名、编码说明和分析计划等附加内容。 |
 
 ## 3. 对话示例

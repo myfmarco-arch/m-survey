@@ -1,0 +1,36 @@
+# 时长估算的起始参数。
+#
+# 这些数值是经验起始值，未经本项目核验，不能直接用来向受访者承诺时长。
+# 用组织问卷平台的历史作答时长校准后再使用，校准方法见
+# references/services/validation/respondent-burden.md 的“校准”一节。
+# 团队可以复制本文件、改数值，并用 estimate_duration.py --params 指定。
+schema_version: 1
+status: starting-assumption   # 校准后改为 calibrated，并在 calibration 中记录依据
+
+reading:
+  chars_per_minute: 300       # 中文按字计；偏慢估计，覆盖手机端阅读
+  words_per_minute: 200       # 非中日韩文字按词计
+
+answer_seconds:               # 读完题目后的作答动作时间，不含阅读
+  single: 4
+  multi: 5
+  scale: 3
+  matrix_row: 3               # 矩阵每行；矩阵题干和锚点另计阅读
+  numeric: 6
+  open_text_required: 30
+  open_text_optional: 10      # 选答开放题只有部分人会写
+  ranking_per_item: 3         # 每个需要排出的位置
+  info: 0
+
+defaults:
+  conditional_share: 0.5      # 有显示条件但没有填写 expected_share 的题目，典型路径按此比例计
+  loop_count: 2               # 循环题没有填写 expected_loops 时，典型路径按此次数计
+
+thresholds:
+  matrix_rows: 10             # 超过时提示 burden.matrix-size
+  long_list: 15               # 普通选项超过时提示 burden.long-list
+  long_text_chars: 150        # 题干或说明超过时提示 burden.long-text
+
+calibration:
+  factor: 1.0                 # 实际中位时长 ÷ 估算典型时长；未校准时为 1.0
+  basis: 未校准

@@ -1,6 +1,6 @@
 schema_version: 2
 id: survey-zh-default
-version: 0.5.0
+version: 0.6.0
 framework_contract: m-survey-contract-v1
 
 contracts:
@@ -8,9 +8,6 @@ contracts:
   module: references/contracts/module-contract.md
   validation: references/contracts/validation-contract.md
   overlay: references/contracts/overlay-contract.md
-
-schemas:
-  questionnaire_spec: schemas/questionnaire-spec.schema.json
 
 services:
   routing: references/services/task-routing.md
@@ -29,6 +26,12 @@ validation:
       trigger: 交付物包含样本量、配额、邀约量、样本框架或样本代表性说明
     - file: references/services/validation/privacy-baseline.md
       trigger: 涉及未成年人、个人信息、敏感信息、联系方式、数据关联、多市场、第三方处理或跨境
+    - file: references/services/validation/data-quality.md
+      trigger: 交付可投放的完整问卷或修订问卷；审核时用户关心数据质量
+    - file: references/services/validation/respondent-burden.md
+      trigger: 交付完整问卷或修订问卷；用户给出目标时长
+    - file: references/services/validation/tracking-comparability.md
+      trigger: 修改已回收问卷、追踪研究，或与上一波、历史结果比较
 
 modules:
   method_index: references/modules/methods/index.md
@@ -42,6 +45,8 @@ modules:
     pricing: references/modules/methods/pricing.md
     brand-tracking: references/modules/methods/brand-tracking.md
   knowledge:
+    question_craft: references/modules/knowledge/question-craft.md
+    timing_parameters: references/modules/knowledge/timing-parameters.yaml
     clarification: references/modules/knowledge/clarification-questions.md
     clarification_probes: references/modules/knowledge/clarification-probes.md
     question_bank: references/modules/knowledge/question-bank.csv
@@ -65,10 +70,8 @@ products:
     profile: references/products/survey-en-minimal/profile.yaml
     writing: references/products/survey-en-minimal/writing.md
     questionnaire_format: references/products/survey-en-minimal/questionnaire-format.md
-    readme: references/products/survey-en-minimal/README.md
 
 product: survey-zh-default
-local_override: local.yaml
 
 adapters:
   default: markdown
@@ -76,12 +79,6 @@ adapters:
     markdown: references/adapters/markdown.md
     codebook: references/adapters/codebook.md
     spss: references/adapters/spss.md
-
-# 可选工具。只在有代码执行环境时使用；没有时由模型按对应规则检查。
-tools:
-  validate_spec: scripts/validate_spec.py
-  render_markdown: scripts/render_markdown.py
-  check_render: scripts/check_render.py
 
 # 按顺序应用的 overlay。格式和合并规则见 references/contracts/overlay-contract.md。
 # 示例：
@@ -93,3 +90,4 @@ evals:
   conformance: evals/conformance/cases.yaml
   modules: evals/modules/cases.yaml
   product: evals/products/survey-zh-default.yaml
+  quality: evals/quality/cases.yaml

@@ -2,6 +2,66 @@
 
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。0.x 期间，合同仍可能调整；调整会在此说明迁移方法。
 
+## [0.6.0] - 2026-11-14
+
+本版本的目标从“不犯错”转向“写得好”：补上资深研究者写问卷时的工艺，并增加能衡量问卷质量的评测。
+
+### 新增
+
+- 题目工艺知识模块（`references/modules/knowledge/question-craft.md`）：题序与污染、常用测量链路（卖点状态、分数段分流追问、个人 TOP 下钻、角色区分、竞品功能对齐）、题干、选项来源与写法、量表、自报事实核验、甄别与目的隐藏、分析钩子、刺激物和手机端。
+- 三项验证服务和规则域：
+  - `quality`：[数据质量控制](references/services/validation/data-quality.md)。按投放渠道给出甄别排除、问卷内检测和回收前固定的清洗规则。
+  - `burden`：[受访负担](references/services/validation/respondent-burden.md)。时长按典型路径和最长路径估算，卷首语承诺须与估算一致；手机端矩阵、长列表和长说明的阈值。
+  - `tracking`：[跨波次可比性](references/services/validation/tracking-comparability.md)。逐题判断可比、需加注和不可比。
+- 满意度常用规范写进官方中文产品的撰写规范：1–10 分、只标两端（1 = 非常不满意，10 = 非常满意），主指标为 Top 2 Box（9–10 分占比，称“满意率”），均值为辅助；选“无法评价”的不计入分母；1–8 分追问“还可以做得更好”。沿用追踪口径、使用标准量表或用户另有规定时不套用。新增 `format.satisfaction-default` 规则和两个评测用例（正向、追踪边界）。示例问卷的满意度题改为 1–10 分。
+- `measurement` 新规则：题序（总体先于细项、评价先于曝光、无提示先于提示、评分先于原因）、选项来源、宣传文案、召回期、自报事实核验、刺激物展示。`spec` 新规则：文本残留、区间重叠。
+- 脚本：
+  - `estimate_duration.py`：估算典型路径和最长路径，列出最耗时的题目和使用了默认假设的题目。参数在 `timing-parameters.yaml`，是未经校准的起始值，附校准方法。
+  - `diff_waves.py`：比较两波问卷规格，输出可比性清单。
+  - `lint_text.py`：不依赖格式的宽松检查，用于审核从在线文档、表格或其他平台导出的问卷。
+  - `render_markdown.py --design-table design.md --cleaning-rules cleaning.md`：把题目设计表（研究问题、分析用途、选项来源、典型秒数）和清洗规则单独写成文件，贴进研究简报与方案。问卷文件只渲染卷首语和正文。
+- QuestionnaireSpec 新字段（均为可选）：`meta.channel`、`meta.target_minutes`、`purpose.analysis`、`option_source`、`expected_share`、`expected_loops`、`quality`（题目级检测）、顶层 `quality.cleaning_rules`、选项 `tag`（不展示的分析维度）；`purpose.type` 增加 `quality_control`。
+- 质量评测组 `quality`：5 个虚构但贴近实务的需求；`skill` 与 `baseline`（不装 Skill）两种条件生成，可加人工参考版本；打乱标识后按 8 维评审量表盲评；报告各维度均分和 `skill − baseline` 差值。命令为 `run_evals.py quality prepare|generate|judge|report`。
+- 模块评测增加题目工艺、数据质量、受访负担和跨波次可比 10 个用例；官方产品评测增加“两份文件”和“不罗列未被提出的方法”用例。
+
+### 变更
+
+- `SKILL.md` 改为以“写好问卷的底线”为核心；定制机制（产品注册、`local.yaml`）移到架构说明，运行时不再默认阅读。
+- 官方产品：撰写规范增加改写示例、评分锚点、特殊选项和指令题写法；工作流增加收集已有材料、质量控制和时长估算步骤；交付明确分成两份文件：**研究简报与方案**（给需求方：一屏简报、研究目标、方法方案、样本方案、题目设计表、需确认项、后续建议）和**问卷**（给编程和平台：只有卷首语和正文）；简报表格最多 6 行、每格一句话（`format.brief-concise`）；结论边界写进方法方案，清洗规则写进样本方案；验证记录、规则标识和假设清单不进交付物；7 份案例各增加“常见错误”。
+- 程序标签增加 `维度：…`；质量检测题在标题下写一行“质量控制：……”；正文外附录增加“清洗规则”“题目设计表”。
+- 规则标识只出现在审核报告中（`format.rule-id-audit-only`）。
+- 方法方案不再默认罗列 KANO、MaxDiff、NPS 等不采用的方法；只在用户点名或需求措辞容易被误读时，用一两句说明（`format.alternatives-on-demand`）。
+- 澄清问题 U04 改为询问上一波问卷、问题清单、舆情和客服分类；需要封闭选项列表而用户没有材料时提前到首轮。
+- 示例 `expense-app-autocat` 补充渠道、目标时长、分析用途、选项来源、分析维度标签和清洗规则；研究方案按新的两份文件结构重写，并附生成的题目设计表和清洗规则。
+
+### 清理
+
+- 删除 `product.yaml` 中无人读取的 `tools`、`schemas`、`local_override` 和产品的 `readme` 键；这些内容只在 `check_product` 里做存在性检查，实际路径由脚本和 `SKILL.md` 直接写。
+- 删除无人使用的代码：`check_render.HEADING_RE`、`Renderer` 的 `design_table` 参数、`check_repo.PROFILE_KEYS`、`spec_lib.VALUE_TYPES`、`spec_lib.product_dir_of` 与 `load_profile_by_id`。
+- `render_markdown.py` 的 `--codes` 改为必填，与 SKILL.md“不默认使用 default”的要求一致；CI、示例 README 和测试同步补参数。
+- 产品配置删除不再使用的 `headings.cleaning`、`headings.design`；`appendices` 只保留模板实际会用到的“需确认项”。
+- 合并 Codebook 适配器里与 `adapter.no-placeholder` 重复的占位符规则；`measurement-integrity.md` 删去与题目工艺重复的题序和刺激物写法，只保留检查项。
+- 示例目录回到两份交付：`design-table.md`、`cleaning-rules.md` 并入 `02-research-plan.md`。
+- 实现 `burden.duration-estimated`，使“脚本可检”标记属实。
+
+### 一致性修正
+
+- 兼容性声明统一：README、`evals/scoring.md`、`docs/ARCHITECTURE.md` 和 `evals/baselines/README.md` 一致说明当前版本没有可用的兼容性声明；历史基线只对旧快照有效。
+- `evals/scoring.md` 补充“未完成”状态，与 `run_evals.py` 的实际行为一致；基线文件命名改为与实际一致。
+- `evals/README.md` 的模块枚举补齐 `question-craft`、`data-quality`、`respondent-burden`、`tracking`。
+- 题目标题由“四个部分”更正为“五个部分”。
+- 时长口径统一为“不低于典型路径、不高于最长路径”，`workflow.md`、`templates.md` 与规则描述一致。
+- `format.two-documents` 补充用户明确要求附带说明时的例外。
+- 样本方案模板补齐合同的必填项“损耗假设”和“邀约量”。
+- `two-documents-delivery` 用例改为阻断。
+
+### 兼容性
+
+- 合同 revision 前移到 `2026-11-15.1`（验证合同增加三个规则域，schema 增加可选字段）。已有 spec 不需修改即可通过 schema。
+- `validate_spec.py` 会对缺少清洗规则、多选题缺少选项来源等情况给出新的 `warning`，已有 spec 需要补充字段才能做到零提示。
+- 第三方产品的 `profile.yaml` 使用新特性时，需要补充 `tokens.analysis_tag`、`quality_*`、`cleaning_action_*`、`not_stated`，`headings.cleaning`、`headings.design`，`tables.cleaning`、`tables.design` 和 `option_source_labels`；不使用时不受影响。
+- 本版本没有新的行为基线，不声明兼容。质量评测尚未用真实模型跑过正式基线。
+
 ## [0.5.0] - 2026-11-12
 
 ### 新增

@@ -5,8 +5,10 @@
     python scripts/validate_spec.py path/to/spec.yaml [--format text|yaml|json]
 
 输出遵循 references/contracts/validation-contract.md 的 ValidationResult 格式。
-存在 error 时退出码为 1。脚本只覆盖 spec.* 和部分 measurement.* / evidence.* 规则，
-不能替代模型对方法前提、证据和隐私风险的判断。
+存在 error 时退出码为 1。脚本只覆盖 spec.* 和部分 measurement.*、evidence.*、quality.*、burden.* 规则，
+不能替代模型对方法前提、证据、题序和隐私风险的判断。
+
+--timing 指定时长参数文件（默认 references/modules/knowledge/timing-parameters.yaml）。
 """
 from __future__ import annotations
 
@@ -25,17 +27,28 @@ from spec_lib import (  # noqa: E402
     EXCLUSIVE_SEMANTICS,
     PIPE_TOKEN_RE,
     PLACEHOLDER_RE,
+    RESIDUE_RE,
     Report,
     SpecIndex,
+    core_text,
+    estimate_duration,
     iter_questions,
     load_schema,
+    load_timing,
     load_yaml,
     option_semantic,
+    range_overlaps,
+    text_units,
 )
 
 SRC_SPEC = "references/services/validation/spec-integrity.md"
 SRC_MEAS = "references/services/validation/measurement-integrity.md"
 SRC_EVID = "references/services/validation/evidence-integrity.md"
+SRC_QUAL = "references/services/validation/data-quality.md"
+SRC_BURDEN = "references/services/validation/respondent-burden.md"
+
+EXTERNAL_CHANNELS = {"panel", "community", "social"}
+LIST_PURPOSES = {"research_question"}
 
 
 def schema_check(spec: dict, report: Report) -> bool:
@@ -368,7 +381,7 @@ def check_text(idx: SpecIndex, spec: dict, report: Report) -> None:
         m = PLACEHOLDER_RE.search(stripped)
         if m:
             report.add("spec.no-placeholder", "error", target, f"文本包含未解释占位符“{m.group(0)}”。",
-                       "替换为实际内容；无法确定时移到正文外的需确认项。", SRC_SPEC)
+                       "替换为实际内容；无法确定时移到研究简报与方案的需确认项。", SRC_SPEC)
             return
         m = DRAFT_WORD_RE.search(stripped)
         if m:
@@ -377,7 +390,7 @@ def check_text(idx: SpecIndex, spec: dict, report: Report) -> None:
                            "如果这是受访者可选的正式选项，可以保留；如果是未完成内容，替换为实际选项。", SRC_SPEC)
             else:
                 report.add("spec.no-placeholder", "error", target, f"文本包含未解释占位符“{m.group(0)}”。",
-                           "替换为实际内容；无法确定时移到正文外的需确认项。", SRC_SPEC)
+                           "替换为实际内容；无法确定时移到研究简报与方案的需确认项。", SRC_SPEC)
 
     scan(spec.get("meta", {}).get("intro", ""), "QuestionnaireSpec.meta.intro")
     for qid in idx.order:
@@ -409,7 +422,149 @@ def check_sections(spec: dict, report: Report) -> None:
                        f"模块 {s.get('id')} 没有题目。", "删除空模块或补充题目。", SRC_SPEC)
 
 
-def validate(spec: dict) -> Report:
+def check_text_quality(idx: SpecIndex, spec: dict, report: Report) -> None:
+    """公式残留、删除线和区间重叠。"""
+    texts = [("QuestionnaireSpec.meta.intro", spec.get("meta", {}).get("intro", ""))]
+    for qid in idx.order:
+        q = idx.questions[qid]
+        texts += [(f"QuestionnaireSpec.{qid}", q.get(k, "")) for k in ("prompt", "label", "program_note")]
+        texts += [(f"QuestionnaireSpec.{qid}.{o.get('id')}", o.get("text", "")) for o in q.get("options", []) or []]
+        texts += [(f"QuestionnaireSpec.{qid}.{r.get('id')}", r.get("text", "")) for r in q.get("rows", []) or []]
+        if q.get("response_type") in {"single", "multi"}:
+            pairs = range_overlaps([o.get("text", "") for o in q.get("options", []) or []])
+            if pairs:
+                shown = "；".join(f"“{a}”和“{b}”" for a, b in pairs[:3])
+                report.add("spec.range-overlap", "warning", f"QuestionnaireSpec.{qid}",
+                           f"{qid} 的区间选项边界重叠：{shown}。",
+                           "改为半开写法，例如“1 年至不到 3 年”，让每个值只落在一个选项中。", SRC_SPEC)
+    for target, text in texts:
+        m = RESIDUE_RE.search(text or "")
+        if m:
+            report.add("spec.text-residue", "error", target, f"文本包含残留“{m.group(0)}”。",
+                       "删除表格公式错误、删除线和修订痕迹，替换为正确内容。", SRC_SPEC)
+
+
+def check_option_source(idx: SpecIndex, report: Report) -> None:
+    """多选和排序题的封闭列表要写明来源；自拟列表提示列入需确认项。"""
+    for qid in idx.order:
+        q = idx.questions[qid]
+        src = q.get("option_source")
+        if src and src.get("type") == "drafted":
+            report.add("measurement.option-source", "info", f"QuestionnaireSpec.{qid}",
+                       f"{qid} 的选项列表由研究者自拟。",
+                       "在需确认项中请需求方用上一波问卷、问题清单、舆情或客服分类校准。", SRC_MEAS)
+            continue
+        if src or q.get("options_from") or q.get("response_type") not in {"multi", "ranking"}:
+            continue
+        if (q.get("purpose") or {}).get("type") not in LIST_PURPOSES:
+            continue
+        regular = [o for o in q.get("options", []) or [] if option_semantic(o) == "regular"]
+        if len(regular) >= 4:
+            report.add("measurement.option-source", "warning", f"QuestionnaireSpec.{qid}",
+                       f"{qid} 的 {len(regular)} 个选项没有写明来源。",
+                       "填写 option_source：上一波问卷、舆情、客服与反馈、埋点、定性研究、案头资料、需求方提供或自拟。",
+                       SRC_MEAS)
+
+
+def check_list_order(idx: SpecIndex, report: Report) -> None:
+    """先选“哪些方面”，再给同样的方面打分：前一题会影响后一题。"""
+    for i, qid in enumerate(idx.order):
+        q = idx.questions[qid]
+        if q.get("response_type") not in {"single", "multi"} or q.get("options_from"):
+            continue
+        a = {core_text(o.get("text", "")) for o in q.get("options", []) or [] if option_semantic(o) == "regular"}
+        a.discard("")
+        if len(a) < 3:
+            continue
+        for later in idx.order[i + 1:]:
+            b_q = idx.questions[later]
+            if b_q.get("response_type") != "matrix" or not b_q.get("scale"):
+                continue
+            b = {core_text(r.get("text", "")) for r in b_q.get("rows", []) or []}
+            b.discard("")
+            shared = a & b
+            if len(shared) >= 3 and len(shared) >= len(b) / 2:
+                report.add("measurement.order-rating-before-reason", "warning", f"QuestionnaireSpec.{qid}",
+                           f"{qid} 的选项与后面评分矩阵 {later} 的 {len(shared)} 行相同。先选方面会影响后面的打分。",
+                           f"把 {qid} 移到 {later} 之后，或删去 {qid}，只对 {later} 中的低分行追问原因。", SRC_MEAS)
+
+
+def check_quality(spec: dict, idx: SpecIndex, report: Report) -> None:
+    meta = spec.get("meta", {}) or {}
+    checks = [qid for qid in idx.order if idx.questions[qid].get("quality")]
+    for qid in checks:
+        qc = idx.questions[qid]["quality"]
+        valid = idx.option_ids(qid)
+        for oid in qc.get("pass", []) or []:
+            if oid not in valid:
+                report.add("spec.logic-option-reference", "error", f"QuestionnaireSpec.{qid}",
+                           f"{qid} 的质量检测正确答案引用了不存在的选项 {oid}。", "使用本题存在的选项标识。", SRC_SPEC)
+        if qc.get("role") in {"instructed_response", "knowledge"} and not qc.get("pass"):
+            report.add("quality.attention-check", "warning", f"QuestionnaireSpec.{qid}",
+                       f"{qid} 是质量检测题，但没有写明正确答案。", "在 quality.pass 中填写正确选项，并写明 action。", SRC_QUAL)
+    roles = {idx.questions[qid]["quality"].get("role") for qid in checks}
+    if meta.get("channel") in EXTERNAL_CHANNELS and not roles & {"instructed_response", "consistency"}:
+        report.add("quality.attention-check", "warning", "QuestionnaireSpec",
+                   f"渠道为 {meta['channel']}，但问卷中没有指令题或一致性检测。",
+                   "加入 1 道指令题（quality.role: instructed_response），写明正确答案和处理方式。", SRC_QUAL)
+    if len(checks) > 2:
+        report.add("quality.respectful-check", "info", "QuestionnaireSpec",
+                   f"问卷中有 {len(checks)} 道质量检测题。", "保留不超过 2 道，其余改为回收后的清洗规则。", SRC_QUAL)
+    elif checks and roles == {"knowledge"}:
+        report.add("quality.respectful-check", "info", "QuestionnaireSpec",
+                   "质量检测只用了常识题。", "改用或补充指令题；常识题区分度低。", SRC_QUAL)
+    if not ((spec.get("quality") or {}).get("cleaning_rules")):
+        report.add("quality.cleaning-rules", "warning", "QuestionnaireSpec",
+                   "没有写明清洗规则。",
+                   "在 quality.cleaning_rules 中写明判定条件、处理方式和依据，例如作答过快、直线作答、事实矛盾。", SRC_QUAL)
+
+
+def check_burden(spec: dict, idx: SpecIndex, report: Report, timing: dict | None) -> None:
+    try:
+        params = timing or load_timing()
+    except Exception:  # noqa: BLE001
+        return
+    th = params.get("thresholds") or {}
+    language = (spec.get("meta") or {}).get("language", "zh-CN")
+    open_required = 0
+    for qid in idx.order:
+        q = idx.questions[qid]
+        rtype = q.get("response_type")
+        rows = q.get("rows", []) or []
+        if rtype == "matrix" and len(rows) > th.get("matrix_rows", 10):
+            report.add("burden.matrix-size", "warning", f"QuestionnaireSpec.{qid}",
+                       f"{qid} 有 {len(rows)} 行，超过一屏可读的 {th.get('matrix_rows', 10)} 行。",
+                       "拆成两屏、只显示上一题选过的行，或改为循环单题。", SRC_BURDEN)
+        regular = [o for o in q.get("options", []) or [] if option_semantic(o) == "regular"]
+        if len(regular) > th.get("long_list", 15):
+            report.add("burden.long-list", "info", f"QuestionnaireSpec.{qid}",
+                       f"{qid} 有 {len(regular)} 个普通选项。", "按主题分组展示，或先选大类再选细项。", SRC_BURDEN)
+        if text_units(q.get("prompt", ""), language) > th.get("long_text_chars", 150):
+            report.add("burden.long-text", "info", f"QuestionnaireSpec.{qid}",
+                       f"{qid} 的题干较长。", "拆短、配图，或把说明放到单独一页。", SRC_BURDEN)
+        if rtype == "open_text" and (q.get("response_rules") or {}).get("required", True):
+            open_required += 1
+    if open_required > 2:
+        report.add("burden.open-text-count", "info", "QuestionnaireSpec",
+                   f"必答开放题有 {open_required} 道。", "只保留最关键的一道必答，其余改为选答。", SRC_BURDEN)
+    est = estimate_duration(spec, params)
+    meta = spec.get("meta", {}) or {}
+    typical = est["typical_minutes"]
+    if meta.get("estimated_minutes") is None:
+        report.add("burden.duration-estimated", "info", "QuestionnaireSpec.meta.estimated_minutes",
+                   f"没有填写卷首语承诺的时长；按当前参数估算典型路径约 {typical} 分钟。",
+                   "估算后把承诺时长写进 meta.estimated_minutes，并让卷首语与之一致。", SRC_BURDEN)
+    if meta.get("target_minutes") and typical > meta["target_minutes"]:
+        report.add("burden.over-target", "warning", "QuestionnaireSpec",
+                   f"典型路径约 {typical} 分钟，超过目标 {meta['target_minutes']} 分钟。",
+                   "运行 estimate_duration.py 查看最耗时的题目，给出删减清单。", SRC_BURDEN)
+    if meta.get("estimated_minutes") is not None and meta["estimated_minutes"] < typical * 0.8:
+        report.add("burden.unsupported-duration", "warning", "QuestionnaireSpec.meta.estimated_minutes",
+                   f"卷首语承诺约 {meta['estimated_minutes']} 分钟，估算典型路径约 {typical} 分钟。",
+                   "按估算修改卷首语的时长，或删减题目。", SRC_BURDEN)
+
+
+def validate(spec: dict, timing: dict | None = None) -> Report:
     report = Report()
     if not isinstance(spec, dict):
         report.add("spec.schema", "error", "QuestionnaireSpec", "文件不是 YAML 对象。", "检查文件内容。", SRC_SPEC)
@@ -427,6 +582,11 @@ def validate(spec: dict) -> Report:
     check_text(idx, spec, report)
     check_fielded(spec, idx, report)
     check_sections(spec, report)
+    check_text_quality(idx, spec, report)
+    check_option_source(idx, report)
+    check_list_order(idx, report)
+    check_quality(spec, idx, report)
+    check_burden(spec, idx, report, timing)
     return report
 
 
@@ -434,8 +594,9 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("spec", type=Path)
     ap.add_argument("--format", choices=["text", "yaml", "json"], default="text")
+    ap.add_argument("--timing", type=Path, help="时长参数文件")
     args = ap.parse_args(argv)
-    report = validate(load_yaml(args.spec))
+    report = validate(load_yaml(args.spec), load_timing(args.timing) if args.timing else None)
     report.dump(args.format)
     return 1 if report.errors else 0
 

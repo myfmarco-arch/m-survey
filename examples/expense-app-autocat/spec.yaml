@@ -7,8 +7,10 @@ meta:
   language: zh-CN
   status: draft
   version: "1.0"
-  estimated_minutes: 6
-  intro: 感谢您参与账小满的用户调研。本问卷了解您使用记账功能的体验，约需 6 分钟。参与完全自愿，您可以随时退出。问卷不收集姓名、手机号等联系方式，回答不与您的账号关联，结果只以汇总形式用于改进产品。
+  channel: in_app
+  target_minutes: 6
+  estimated_minutes: 4
+  intro: 感谢您参与账小满的用户调研。本问卷了解您使用记账功能的体验，约需 4 分钟。参与完全自愿，您可以随时退出。问卷不收集姓名、手机号等联系方式，回答不与您的账号关联，结果只以汇总形式用于改进产品。
 
 research_questions:
   - id: RQ1
@@ -68,7 +70,7 @@ sections:
     questions:
       - id: Q1
         label: 功能认知
-        purpose: {type: research_question, refs: [RQ1]}
+        purpose: {type: research_question, refs: [RQ1], analysis: 认知率；按 D1 使用时长交叉}
         construct: awareness
         prompt: 账小满有一项“自动分类”功能：记账时，App 会根据账单内容自动选择“餐饮”“交通”等分类。在今天之前，您是否知道这项功能？
         response_type: single
@@ -92,7 +94,7 @@ sections:
 
       - id: Q3
         label: 总体满意度
-        purpose: {type: research_question, refs: [RQ2]}
+        purpose: {type: research_question, refs: [RQ2], analysis: 使用者满意率（T2B，9–10 分占比）和均值；作为 Q4 关联分析的结果变量}
         construct: usage_experience
         experience_gate: Q2
         prompt: 总体而言，您对过去 30 天使用自动分类的体验有多满意？
@@ -100,14 +102,15 @@ sections:
         display_logic:
           all:
             - {question: Q2, selected_any: [o1, o2]}
-        scale: {min: 1, max: 5, low: 非常不满意, high: 非常满意}
+        scale: {min: 1, max: 10, low: 非常不满意, high: 非常满意}
+        expected_share: 0.3
 
       - id: Q4
         label: 分项表现
-        purpose: {type: research_question, refs: [RQ2]}
+        purpose: {type: research_question, refs: [RQ2], analysis: 各方面满意率（T2B）和均值；与 Q3 满意率的相关，只作关联参考}
         construct: usage_experience
         experience_gate: Q2
-        prompt: 根据过去 30 天的使用经历，您认为自动分类在以下方面表现如何？
+        prompt: 根据过去 30 天的使用经历，您对自动分类以下方面的表现有多满意？
         response_type: matrix
         display_logic:
           all:
@@ -117,12 +120,13 @@ sections:
           - {id: r2, text: 分类错了以后容易修改}
           - {id: r3, text: 能识别我自己新建的分类}
           - {id: r4, text: 同一商家的账单分类前后一致}
-        scale: {min: 1, max: 5, low: 非常差, high: 非常好}
+        scale: {min: 1, max: 10, low: 非常不满意, high: 非常满意}
         response_rules: {randomize_rows: true}
+        expected_share: 0.3
 
       - id: Q5
         label: 遇到的问题
-        purpose: {type: research_question, refs: [RQ3]}
+        purpose: {type: research_question, refs: [RQ3], analysis: 各问题在使用者中的发生率及 95% 置信区间}
         construct: usage_experience
         experience_gate: Q2
         prompt: 过去 30 天，您在使用自动分类时遇到过以下哪些情况？
@@ -131,18 +135,20 @@ sections:
           all:
             - {question: Q2, selected_any: [o1, o2]}
         options:
-          - {id: o1, text: 分类错误，需要手动修改}
-          - {id: o2, text: 同一商家的账单每次被分到不同分类}
-          - {id: o3, text: 无法识别我新建的分类}
-          - {id: o4, text: 转账或退款被记成支出}
-          - {id: o5, text: 找不到修改分类的入口}
+          - {id: o1, text: 分类错误，需要手动修改, tag: 准确性}
+          - {id: o2, text: 同一商家的账单每次被分到不同分类, tag: 一致性}
+          - {id: o3, text: 无法识别我新建的分类, tag: 自定义分类}
+          - {id: o4, text: 转账或退款被记成支出, tag: 账单类型识别}
+          - {id: o5, text: 找不到修改分类的入口, tag: 修改入口}
           - {id: other, text: 其他, semantic: other, open_text: true}
           - {id: none, text: 以上都没有遇到, semantic: none, exclusive: true}
         response_rules: {randomize_options: true}
+        option_source: {type: support_feedback, note: 近 3 个月客服记录和埋点中修改分类最多的场景，由产品团队提供}
+        expected_share: 0.3
 
       - id: Q6
         label: 问题频率
-        purpose: {type: research_question, refs: [RQ3]}
+        purpose: {type: research_question, refs: [RQ3], analysis: 各问题的频率分布；与 Q5 发生率一起排序}
         construct: usage_experience
         experience_gate: Q2
         prompt: 过去 30 天，{{item}}这种情况大约发生了多少次？
@@ -158,10 +164,12 @@ sections:
           - {id: o3, text: 6–10 次}
           - {id: o4, text: 11 次及以上}
           - {id: o5, text: 不记得了, semantic: dont_know, code: 97}
+        expected_share: 0.25
+        expected_loops: 2
 
       - id: Q7
         label: 影响最大的问题
-        purpose: {type: research_question, refs: [RQ3]}
+        purpose: {type: research_question, refs: [RQ3], analysis: 首要问题占比}
         construct: usage_experience
         experience_gate: Q2
         prompt: 在您遇到的情况中，哪一项对您记账的影响最大？
@@ -172,10 +180,11 @@ sections:
             - {question: Q2, selected_any: [o1, o2]}
             - {question: Q5, selected_none: [none]}
         program_note: Q5 只选了一种情况（不含“其他”）的受访者不展示本题，由程序自动记为该情况的编码。
+        expected_share: 0.15
 
       - id: Q8
         label: 未使用原因
-        purpose: {type: research_question, refs: [RQ4]}
+        purpose: {type: research_question, refs: [RQ4], analysis: 知道但未使用者的原因提及率}
         construct: reason
         prompt: 您过去 30 天没有使用自动分类，主要是因为什么？
         response_type: multi
@@ -191,10 +200,12 @@ sections:
           - {id: other, text: 其他, semantic: other, open_text: true}
           - {id: dk, text: 说不清, semantic: dont_know, exclusive: true, code: 97}
         response_rules: {randomize_options: true, max_select: 3}
+        option_source: {type: support_feedback, note: 客服记录中用户说明不用自动分类的原因分类}
+        expected_share: 0.3
 
       - id: Q9
         label: 改进建议
-        purpose: {type: research_question, refs: [RQ3]}
+        purpose: {type: research_question, refs: [RQ3], analysis: 开放题编码，补充 Q5 列表遗漏的问题}
         construct: need
         prompt: 如果自动分类只能改进一处，您最希望改进什么？
         response_type: open_text
@@ -202,6 +213,7 @@ sections:
           all:
             - {question: Q2, selected_any: [o1, o2]}
         response_rules: {required: false}
+        expected_share: 0.3
 
   - id: P3
     title: 背景信息
@@ -218,3 +230,14 @@ sections:
           - {id: o2, text: 3 个月至不到 1 年}
           - {id: o3, text: 1 年至不到 3 年}
           - {id: o4, text: 3 年及以上}
+
+quality:
+  cleaning_rules:
+    - id: C1
+      condition: 完成时长低于全部完成样本中位数的三分之一
+      action: flag
+      basis: 起始假设；回收前 200 份后按实际分布复核
+    - id: C2
+      condition: Q9 填写乱码、重复字符或与自动分类无关的内容
+      action: flag
+      basis: 只标记，不因选答开放题剔除样本

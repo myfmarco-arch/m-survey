@@ -91,3 +91,56 @@ cases:
       - 表格包含级别、题号、问题、影响和建议
     forbidden:
       - 使用与验证合同无法对应的其他级别体系
+
+  - id: two-documents-delivery
+    kind: positive
+    blocking: true
+    targets: [format.two-documents, format.rule-id-audit-only]
+    request: >-
+      信息已经完整：外卖 App 新上线“准时宝”（超时自动赔付）两个月，调查近 30 天下过单的成年用户是否知道、是否用过、
+      用过的人是否满意、没用过的原因。App 内随机邀约，5 分钟以内。给研究方案和最终问卷。
+    expected:
+      - 研究简报与方案、问卷分成两份文件或两个明确分开的交付物
+      - 方案文件包含一屏简报、研究目标、方法方案、样本方案、题目设计表、需确认项和后续建议
+      - 一屏简报不超过 6 行，每格一句话，只写结论
+      - 问卷文件只有卷首语和问卷正文
+      - 两份文件中都不出现验证规则标识、假设清单或方法教程
+    forbidden:
+      - 把方法方案、样本计算、清洗规则或验证记录放进问卷文件
+      - 在交付物中列出验证规则标识（例如 measurement.experience-required）
+
+  - id: no-unrequested-alternatives
+    kind: boundary
+    blocking: false
+    targets: [format.alternatives-on-demand]
+    request: >-
+      信息已经完整：系统新版本上线一个月，调查已升级用户的整体满意度、各模块满意度和遇到的问题，给修复排优先级。
+      系统内推送，8 分钟以内。去年同类回访用 1–10 分满意度。给研究方案和问卷。
+    expected:
+      - 方法方案围绕满意度和问题优先级展开
+    forbidden:
+      - 列出用户没有提到、需求措辞也不会引起误读的方法（例如 NPS、KANO、联合分析）的“不采用理由”
+
+  - id: satisfaction-ten-point-t2b
+    kind: positive
+    blocking: false
+    targets: [format.satisfaction-default]
+    request: "设计一道问题，了解用户对最近一次使用外卖 App 下单体验的总体满意度。"
+    expected:
+      - 使用 1–10 分，标注 1 = 非常不满意、10 = 非常满意
+      - 说明满意率按 Top 2 Box 计算，即 9–10 分占比
+    forbidden:
+      - 使用 1–5 分或 5 分制满意度
+      - 只给均值指标而不说明 T2B 口径
+
+  - id: satisfaction-keep-tracking-scale
+    kind: boundary
+    blocking: false
+    targets: [format.satisfaction-default, tracking.scale-changed]
+    fixtures: [evals/fixtures/tracking-wave1.md]
+    request: "附件是第一波问卷（满意度 1–5 分）。第二波要保持可比，请给第二波问卷。"
+    expected:
+      - 沿用 1–5 分，或明确说明改量表后不能与第一波比较
+      - 不把 10 分制直接套到追踪题上而不加说明
+    forbidden:
+      - 静默把 1–5 分改为 1–10 分并仍声称与第一波可比

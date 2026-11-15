@@ -231,3 +231,144 @@ cases:
       - Q2 的 97 不记得设为用户缺失，与未展示 Q2 产生的系统缺失区分
     forbidden:
       - 将 98 或 99 设为 SPSS 缺失值
+
+  # ---------- 题目工艺 ----------
+  - id: craft-overall-before-exposure
+    module: question-craft
+    kind: positive
+    blocking: true
+    targets: [measurement.order-before-exposure, measurement.order-general-first, measurement.marketing-language]
+    request: >-
+      新版系统上线一个月，想做回访：先看整体满意度，再看 5 个新卖点用户知不知道、用没用过、用过的觉得怎么样。
+      卖点文案：【智能调度】全链路负载监测，指令精算优化；【桌面堆叠】文件夹可拖拽调整大小，小部件支持堆叠……
+      样本是系统内推送的已升级用户，请直接给完整问卷。
+    expected:
+      - 整体满意度放在任何卖点介绍之前
+      - 卖点描述改成用户能观察到的功能描述，不照搬宣传文案
+      - 后台优化类卖点不让用户评价使用体验，或说明只能测认知和可感知的变化
+      - 卖点体验评价只向用过的人显示
+    forbidden:
+      - 先展示卖点再问整体满意度
+      - 题干或选项直接使用“全链路负载监测，指令精算优化”这类宣传语让用户打分
+
+  - id: craft-reason-after-rating
+    module: question-craft
+    kind: boundary
+    blocking: true
+    targets: [measurement.order-rating-before-reason]
+    request: >-
+      帮我检查这个顺序是否合理：Q2 先让 1–8 分的人选“哪些方面不满意”（界面、流畅度、续航、稳定性、信号、自带应用），
+      Q3 再让所有人给这 6 个方面打 1–10 分。
+    expected:
+      - 指出 Q2 会影响 Q3 的打分
+      - 建议先评分，再对低分方面追问原因，或删去重复的列表
+    forbidden:
+      - 认为当前顺序没有问题
+
+  - id: craft-option-source
+    module: question-craft
+    kind: positive
+    blocking: false
+    targets: [measurement.option-source]
+    request: >-
+      做一份问卷了解用户使用我们的打车 App 时遇到过哪些问题，并排出修复优先级。目标用户是近 30 天打过车的成年用户，
+      App 内邀约，5 分钟以内。直接给问卷。
+    expected:
+      - 询问或说明问题列表的来源（例如客服分类、应用商店评论、上一波问卷）
+      - 自拟的问题列表写进研究简报与方案的需确认项，请需求方用真实数据校准
+    forbidden:
+      - 把自拟的问题列表当成已验证的完整列表，不做任何说明
+
+  - id: craft-version-verification
+    module: question-craft
+    kind: positive
+    blocking: false
+    targets: [measurement.self-report-verification]
+    request: "做一份甄别问卷，找出手机系统已经升级到某测试版、并且使用超过两周的用户。"
+    expected:
+      - 版本题给出查看路径、截图或图片识别等核验方式
+      - 写清“不清楚版本”的受访者如何处理
+      - 使用时长区间边界不重叠
+    forbidden:
+      - 只问“您是否升级了测试版”这类是 / 否题作为唯一资格判断
+
+  # ---------- 数据质量 ----------
+  - id: quality-panel-controls
+    module: data-quality
+    kind: positive
+    blocking: true
+    targets: [quality.attention-check, quality.screening-exclusions, quality.cleaning-rules, quality.hidden-purpose]
+    request: >-
+      从外部样本库招募 600 位过去 6 个月换过手机的成年用户，了解他们为什么离开原来的品牌。问卷 12 分钟以内，直接给完整问卷。
+    expected:
+      - 设置行业排除和近期参与调研排除
+      - 至少 1 道指令题或等效检测，并写明正确答案和处理方式
+      - 写出回收前固定的清洗规则（例如作答过快、直线作答、事实矛盾）
+      - 卷首语不暴露委托品牌
+    forbidden:
+      - 完全没有任何质量控制安排
+
+  - id: quality-no-overkill-in-app
+    module: data-quality
+    kind: boundary
+    blocking: false
+    targets: [quality.respectful-check]
+    request: "App 内随机邀约近 30 天活跃用户做 3 分钟的满意度问卷，直接给问卷。"
+    expected:
+      - 质量检测与渠道匹配，不堆砌多道检测题
+      - 至少写出作答过快等清洗规则
+    forbidden:
+      - 加入 3 道及以上的检测题
+
+  # ---------- 受访负担 ----------
+  - id: burden-duration-estimate
+    module: respondent-burden
+    kind: positive
+    blocking: true
+    targets: [burden.duration-estimated, burden.unsupported-duration]
+    request: >-
+      问卷要求 10 分钟以内。请为一个包含 8 个新功能的“认知、使用、满意度、不满意原因”漏斗加上问题清单和问题频率的回访问卷写完整问卷。
+    expected:
+      - 给出典型路径和最长路径的时长估算，并说明参数或依据
+      - 卷首语的时长与估算一致
+      - 超过目标时给出删减建议
+    forbidden:
+      - 不做任何估算就承诺“约 10 分钟”
+
+  - id: burden-matrix-mobile
+    module: respondent-burden
+    kind: boundary
+    blocking: false
+    targets: [burden.matrix-size]
+    request: "手机端问卷，我想让用户给 18 个系统模块逐个打 1–10 分满意度，放在一个矩阵里。"
+    expected:
+      - 指出 18 行矩阵在手机端负担过重
+      - 建议拆分、只显示用过的模块，或改为循环单题
+    forbidden:
+      - 直接生成 18 行的单一矩阵而不提示负担
+
+  # ---------- 跨波次可比 ----------
+  - id: tracking-scale-change
+    module: tracking
+    kind: boundary
+    blocking: true
+    targets: [tracking.scale-changed, tracking.comparability-stated]
+    fixtures: [evals/fixtures/tracking-wave1.md]
+    request: "附件是第一波问卷。第二波领导想把满意度改成 10 分制，同时要和第一波对比。请给第二波问卷。"
+    expected:
+      - 指出量表从 5 分改为 10 分后与第一波不可直接比较
+      - 给出可选方案（例如保留 5 分制、或改制后重新建立基线），并说明取舍
+      - 列出可比、需加注和不可比的题目
+    forbidden:
+      - 改成 10 分制后仍声称可以直接和第一波比较
+
+  - id: tracking-needs-source
+    module: tracking
+    kind: negative
+    blocking: true
+    targets: [tracking.source-required]
+    request: "我们去年做过满意度调查，题目大概记不清了。今年再做一次，要和去年比。直接给问卷。"
+    expected:
+      - 要求提供去年的原问卷，或说明拿不到原题时不能声称可比
+    forbidden:
+      - 凭记忆重写题目后声称可以和去年直接比较

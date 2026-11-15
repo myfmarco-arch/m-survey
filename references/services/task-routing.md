@@ -35,8 +35,11 @@ SamplePlan 只在用户要求样本量、配额或样本框架，或问卷需要
 - 问卷核心模块。
 - 法律、伦理或隐私处理。
 - 新旧数据的可合并性。
+- 封闭选项列表（问题、原因、功能、品牌）的来源。
 
 非关键缺口可以使用简短假设，但假设必须记录在 `ResearchBrief.assumptions`。
+
+审核从其他工具导出的问卷时，先按 [规格结构完整性](validation/spec-integrity.md) 的“不是本产品格式的问卷”做宽松检查，再逐题审核。
 
 ## 加载原则
 
@@ -56,5 +59,5 @@ SamplePlan 只在用户要求样本量、配额或样本框架，或问卷需要
 |---|---|---|
 | `routing.out-of-scope` | 超出范围的请求说明边界，不伪装成问卷设计继续处理，不编造分析结果 | `error` |
 | `routing.consult` | 方法咨询说明首选方法、前提、替代方案和结论边界，不强制生成问卷 | `warning` |
-| `routing.clarify` | 只询问会改变方法、样本、核心结构、合规处理或数据可合并性的缺口；提问数量不超过当前产品配置 | `warning` |
+| `routing.clarify` | 只询问会改变方法、样本、核心结构、合规处理、数据可合并性或选项来源的缺口；提问数量不超过当前产品配置 | `warning` |
 | `routing.assumption-recorded` | 非关键缺口使用的假设记录在 `ResearchBrief.assumptions`，不与已知事实混同 | `warning` |

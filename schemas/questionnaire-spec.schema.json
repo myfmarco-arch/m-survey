@@ -52,11 +52,32 @@
         },
         "estimated_minutes": {
           "type": "number",
-          "minimum": 0
+          "minimum": 0,
+          "description": "卷首语承诺的时长；应与 estimate_duration.py 估算的典型路径一致。"
         },
         "intro": {
           "type": "string",
           "description": "卷首语。"
+        },
+        "channel": {
+          "enum": [
+            "in_app",
+            "email",
+            "panel",
+            "community",
+            "social",
+            "intercept",
+            "phone",
+            "in_person",
+            "internal",
+            "other"
+          ],
+          "description": "投放渠道。决定数据质量控制的默认组合，见 references/services/validation/data-quality.md。"
+        },
+        "target_minutes": {
+          "type": "number",
+          "minimum": 0,
+          "description": "需求方给出的目标完成时长。estimated_minutes 是卷首语承诺的时长。"
         }
       }
     },
@@ -87,6 +108,48 @@
       "minItems": 1,
       "items": {
         "$ref": "#/definitions/section"
+      }
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "数据质量控制。清洗规则在回收前固定，写进研究简报与方案的样本方案小节，不放进问卷文件。",
+      "properties": {
+        "cleaning_rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "condition",
+              "action"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^C[0-9]+$"
+              },
+              "condition": {
+                "type": "string",
+                "minLength": 1,
+                "description": "判定条件"
+              },
+              "action": {
+                "enum": [
+                  "exclude",
+                  "flag",
+                  "terminate",
+                  "keep_first"
+                ]
+              },
+              "basis": {
+                "type": "string",
+                "description": "阈值或规则的依据；没有依据时写明是假设。渲染到方案时一并给出。"
+              }
+            }
+          }
+        }
       }
     }
   },
@@ -167,7 +230,8 @@
                 "logic",
                 "profile",
                 "consent",
-                "contact"
+                "contact",
+                "quality_control"
               ]
             },
             "refs": {
@@ -179,6 +243,10 @@
             },
             "note": {
               "type": "string"
+            },
+            "analysis": {
+              "type": "string",
+              "description": "这道题的数据怎样用：看什么指标、和什么分组交叉、进入什么模型。"
             }
           }
         },
@@ -351,6 +419,78 @@
         "program_note": {
           "type": "string",
           "description": "给问卷编程人员的说明，渲染到问卷正文中题目下方，例如自动带入或跳过条件。"
+        },
+        "option_source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type"
+          ],
+          "description": "封闭选项列表的来源。type 为 drafted（研究者自拟）时，列表应列入需确认项。",
+          "properties": {
+            "type": {
+              "enum": [
+                "prior_wave",
+                "social_listening",
+                "support_feedback",
+                "analytics",
+                "qualitative",
+                "desk_research",
+                "stakeholder",
+                "drafted"
+              ]
+            },
+            "note": {
+              "type": "string"
+            }
+          }
+        },
+        "expected_share": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "预计看到这道题的受访者比例，用于估算典型路径时长。"
+        },
+        "expected_loops": {
+          "type": "number",
+          "minimum": 0,
+          "description": "循环题的预计循环次数，用于估算典型路径时长。"
+        },
+        "quality": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "role"
+          ],
+          "description": "质量检测题。见 references/services/validation/data-quality.md。",
+          "properties": {
+            "role": {
+              "enum": [
+                "instructed_response",
+                "consistency",
+                "open_quality",
+                "knowledge"
+              ]
+            },
+            "pass": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string"
+              },
+              "description": "正确选项的 id"
+            },
+            "action": {
+              "enum": [
+                "terminate",
+                "exclude",
+                "flag"
+              ]
+            },
+            "note": {
+              "type": "string"
+            }
+          }
         }
       }
     },
@@ -409,6 +549,11 @@
         "eligible": {
           "type": "boolean",
           "description": "在 experience_gate 指向的题目中，表示受访者实际使用过评价对象。"
+        },
+        "tag": {
+          "type": "string",
+          "minLength": 1,
+          "description": "不展示给受访者的分析维度，渲染为程序标签“维度：…”。"
         }
       }
     },

@@ -18,6 +18,8 @@ codes:
 tables:
   options: [Code, Option text, Program tags]
   matrix: [Item ID, Item text, Program tags]
+  cleaning: [ID, Condition, Action, Basis]
+  design: [Question, Label, Research questions, Analysis use, Option source, Typical seconds]
 
 type_labels:
   single: Single choice
@@ -67,6 +69,27 @@ tokens:
   program_note: "Programmer note: {text}"
   loop_item_placeholder: "<current loop item> "
   pipe_placeholder: "<answer to {q}>"
+  analysis_tag: "dimension: {value}"
+  quality_line: "Quality check: {text}"
+  quality_pass: "correct answer {codes}"
+  quality_action_terminate: "terminate if wrong"
+  quality_action_exclude: "exclude in cleaning if wrong"
+  quality_action_flag: "flag for review if wrong"
+  cleaning_action_exclude: exclude
+  cleaning_action_flag: flag for review
+  cleaning_action_terminate: terminate
+  cleaning_action_keep_first: keep first response only
+  not_stated: not stated
+
+option_source_labels:
+  prior_wave: previous wave
+  social_listening: social listening
+  support_feedback: support and feedback
+  analytics: analytics and logs
+  qualitative: qualitative research
+  desk_research: desk research
+  stakeholder: provided by stakeholder
+  drafted: drafted by researcher (to confirm)
 
 headings:
   intro: Introduction
@@ -77,4 +100,4 @@ separators:
   rule: ", "
   label: "; "
 
-appendices: [Items to confirm, Interpretation limits]
+appendices: [Items to confirm]

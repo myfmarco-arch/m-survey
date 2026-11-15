@@ -62,7 +62,7 @@
 |---|---|---|---|---|---|---|---|---|---|
 | [变量] | [标签] | [题号] | [类型] | [内容] | [内容] | [水平] | [条件] | [规则] | [备注] |
 
-最终交付不保留未知编码或待确认占位符。无法确定时，在 Codebook 外列出阻断项。
+最终交付不保留未知编码或待确认占位符（`adapter.no-placeholder`）。无法确定时，在 Codebook 外列出阻断项。
 
 ## 验证
 
@@ -72,4 +72,3 @@
 | `adapter.codebook.missing-distinct` | 用户缺失和系统缺失分开；未展示不编码为“否” | `error` |
 | `adapter.codebook.multi-group` | 多选题组说明成员变量和排他规则 | `warning` |
 | `adapter.codebook.derived-rules` | 反向题、总分和派生变量保留原始变量并写明公式 | `warning` |
-| `adapter.codebook.no-placeholder` | 不保留未知编码或待确认占位符 | `error` |

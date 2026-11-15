@@ -39,6 +39,9 @@ source: references/services/validation/measurement-integrity.md
 | `evidence` | [证据完整性](../services/validation/evidence-integrity.md) | 指标、结论和证据链 |
 | `measurement` | [测量完整性](../services/validation/measurement-integrity.md) | 受访资格、题目、选项和量表 |
 | `sampling` | [样本完整性](../services/validation/sampling-integrity.md) | 样本量、配额和外推 |
+| `quality` | [数据质量控制](../services/validation/data-quality.md) | 甄别排除、问卷内检测和清洗规则 |
+| `burden` | [受访负担](../services/validation/respondent-burden.md) | 时长估算和手机端作答负担 |
+| `tracking` | [跨波次可比性](../services/validation/tracking-comparability.md) | 与上一波或历史结果的可比性 |
 | `privacy` | [隐私基线](../services/validation/privacy-baseline.md) | 个人信息、敏感信息和合规风险初筛 |
 | `spec` | [规格结构完整性](../services/validation/spec-integrity.md) | QuestionnaireSpec 的结构和逻辑；可由脚本检查 |
 | `routing` | [任务路由](../services/task-routing.md) | 工作模式、澄清和适用范围 |
@@ -66,7 +69,7 @@ source: references/services/validation/measurement-integrity.md
 | 方式 | 适用 | 范围 |
 |---|---|---|
 | 模型检查 | 所有环境 | 全部规则 |
-| 脚本检查 | 有代码执行环境，且已写出 QuestionnaireSpec YAML | `spec.*` 和部分 `measurement.*` 规则，见 `scripts/validate_spec.py` |
+| 脚本检查 | 有代码执行环境，且已写出 QuestionnaireSpec YAML | `spec.*` 和部分 `measurement.*`、`quality.*`、`burden.*`、`tracking.*` 规则，见 `scripts/` |
 
 脚本检查不能替代模型对证据、方法前提和隐私风险的判断。脚本未覆盖的规则仍由模型检查。
 

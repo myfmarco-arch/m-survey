@@ -9,6 +9,7 @@
 | `conformance/cases.yaml` | 兼容性用例：所有兼容产品必须通过 |
 | `modules/cases.yaml` | 方法、服务和适配器用例 |
 | `products/survey-zh-default.yaml` | 官方产品的格式和默认值用例 |
+| `quality/` | 质量评测：用例、评审量表和盲评提示词 |
 | `fixtures/` | 用例需要的问卷片段（虚构） |
 | `judge-prompt.md` | 模型评审提示词 |
 | `baselines/` | 已发布的评测基线 |
@@ -20,7 +21,7 @@ overlay 的用例放在 overlay 自己的目录中，例如 `references/overlays
 
 ```yaml
 - id: minors-stop                 # 组内唯一
-  module: kano                    # modules 和 overlay 组必填：方法 id、sample-planning、spss、codebook、markdown 或 overlay
+  module: kano                    # modules 和 overlay 组必填：方法 id、question-craft、data-quality、respondent-burden、tracking、sample-planning、spss、codebook、markdown 或 overlay
   kind: negative                  # positive：应正确完成；boundary：应识别边界；negative：应拒绝或纠正
   blocking: true                  # 是否阻断评测组通过；conformance 组一律视为 true
   targets: [privacy.minor]        # 覆盖的 rule_id，必须已在 references/ 中定义
@@ -63,3 +64,26 @@ python scripts/run_evals.py report --out evals/runs/2026-11-11 --model "<被测�
 ## 发布基线
 
 全部 `conformance` 用例以 N ≥ 3 通过后，把 `results.json` 复制到 `baselines/<日期>-<模型>.json`，并在 README 中注明。
+
+## 质量评测
+
+其他各组检查“有没有犯错”。`quality` 组检查“写得好不好”：同一需求分别在安装和不安装本 Skill 的工作区中生成交付物，打乱标识后按 [评审量表](quality/rubric.md) 逐维打分。
+
+```bash
+# 1. 准备。--reference-dir 可选：放人工撰写的参考交付物，文件名为 <用例 id>.md
+python scripts/run_evals.py quality prepare --runs 3 --out evals/runs/q-2026-11-14
+
+# 2. 生成：skill 条件安装本 Skill，baseline 条件使用空工作区
+python scripts/run_evals.py quality generate --out evals/runs/q-2026-11-14 --cmd "claude -p"
+
+# 3. 盲评
+python scripts/run_evals.py quality judge --out evals/runs/q-2026-11-14 --cmd "claude -p"
+
+# 4. 报告：各条件各维度均分、skill − baseline 差值、胜平负
+python scripts/run_evals.py quality report --out evals/runs/q-2026-11-14 --model "<被测模型>" --judge-label "<评审方式>"
+```
+
+团队可以把自己写过的真实问卷整理成参考交付物，放在仓库外的目录中，通过 `--reference-dir` 加入比较。这样能看出 Skill 与团队人写版本的差距。参考交付物不要提交到公开仓库。
+
+声称质量提升的条件见 [scoring.md](scoring.md) 的“质量评测”。
+

@@ -25,9 +25,11 @@ jobs:
         run: python scripts/validate_spec.py examples/expense-app-autocat/spec.yaml
       - name: Example questionnaire
         run: python scripts/check_render.py examples/expense-app-autocat/03-questionnaire.md --spec examples/expense-app-autocat/spec.yaml
+      - name: Example duration estimate
+        run: python scripts/estimate_duration.py examples/expense-app-autocat/spec.yaml --target 6
       - name: Script tests
         run: python -m unittest discover -s tests -v
       - name: English product renders
         run: |
-          python scripts/render_markdown.py examples/expense-app-autocat/spec.yaml --product survey-en-minimal -o /tmp/en.md
+          python scripts/render_markdown.py examples/expense-app-autocat/spec.yaml --codes default --product survey-en-minimal -o /tmp/en.md
           python scripts/check_render.py /tmp/en.md --spec examples/expense-app-autocat/spec.yaml --product survey-en-minimal

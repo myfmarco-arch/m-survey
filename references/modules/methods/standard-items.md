@@ -159,7 +159,7 @@ UEQ 使用语义差异题组，覆盖吸引力、清晰度、效率、可靠性�
 
 | 方法 | 建议模板 | 重要限制 |
 |---|---|---|
-| CSAT | Overall, how satisfied were you with [specific experience]? / 总体而言，您对这次[具体体验]有多满意？ | 没有唯一跨行业验证问法；必须写明对象和时间。 |
+| CSAT | Overall, how satisfied were you with [specific experience]? / 总体而言，您对这次[具体体验]有多满意？ | 没有唯一跨行业验证问法；必须写明对象和时间。点数和计分按当前产品规范，官方中文产品为 1–10 分、Top 2 Box。 |
 | CES | How much effort did you personally have to put forth to handle your request? / 您为处理这次请求付出了多少努力？ | “公司让事情变得容易”是另一版本；同一问卷不要混用。 |
 | MaxDiff | Which item is most important to you, and which is least important to you? | 这是任务指令，不是心理量表。 |
 | 概念测试 | How clear, relevant, and credible is this concept? / 这个概念有多清楚、相关和可信？ | 维度必须服务于具体决策，并经过预测试。 |

@@ -8,7 +8,8 @@ M-survey 把问卷设计拆成三类内容：
 
 | 内容 | 稳定性 | 谁会改 |
 |---|---|---|
-| 研究判断：方法前提、证据边界、样本规则、测量规则 | 最稳定 | 上游维护者 |
+| 研究判断：方法前提、证据边界、样本规则、测量规则、数据质量、受访负担、跨波可比 | 最稳定 | 上游维护者 |
+| 研究工艺：题序、测量链路、选项来源、量表、刺激物 | 较稳定 | 上游维护者和贡献者 |
 | 方法和知识：KANO、MaxDiff、题库、澄清问题 | 较稳定 | 上游维护者和贡献者 |
 | 产品偏好：写作风格、表格格式、默认编码、工作流 | 最常变化 | 每个团队 |
 
@@ -52,6 +53,16 @@ QuestionnaireSpec 是问卷语义的唯一来源，有 [JSON Schema](../schemas/
 
 `product.yaml` 中的验证分为 `always`（每次交付前）和 `when`（触发条件成立时），避免无关任务加载隐私或样本规则。
 
+规则域与定义文件的对应见 [验证合同](../references/contracts/validation-contract.md)。0.6.0 增加了 `quality`（数据质量控制）、`burden`（受访负担）和 `tracking`（跨波次可比）三个域。
+
+## 运行时与维护者文档
+
+运行时（模型执行任务时读取）的内容以研究工艺和验证规则为主：`SKILL.md` 的“写好问卷的底线”、题目工艺模块、产品的撰写规范和模板、按需读取的验证服务。组合与覆盖合同、合同清单、产品注册和兼容性声明属于维护者文档，只在定制或贡献时读取。
+
+## 质量评测
+
+结构检查和行为评测证明“没有犯错”。`quality` 评测组衡量“写得好不好”：同一需求在安装和不安装本 Skill 的条件下各生成一份，打乱标识后按 8 维量表盲评，报告各维度的差值。某个模块的差值长期接近零，说明它在消耗上下文却没有贡献，应当精简或重写。
+
 ## 组合与覆盖
 
 [组合与覆盖合同](../references/contracts/overlay-contract.md) 定义了：
@@ -75,7 +86,7 @@ QuestionnaireSpec 是问卷语义的唯一来源，有 [JSON Schema](../schemas/
 - 改变 ValidationResult 的格式、规则标识或严重程度定义。
 - 删除或削弱官方验证规则。
 
-声明兼容的条件见 [evals/scoring.md](../evals/scoring.md) 的“兼容性声明”。当前有一份 N=3 的 conformance 基线（[evals/baselines/](../evals/baselines/)），据此可声明 `m-survey-contract-v1@2026-11-11.3`（revision 现值见 manifest）；限制是评审无独立方、被测快照落后于当前 HEAD、`modules` 与 `product` 两组尚未运行。
+声明兼容的条件见 [evals/scoring.md](../evals/scoring.md) 的“兼容性声明”。当前没有可用的兼容性声明：已有基线（[evals/baselines/](../evals/baselines/)）产生于旧快照，不覆盖当前 revision。要声明，必须针对当前 revision 重跑全部 `conformance` 用例。
 
 ### 合同 revision
 
