@@ -2,7 +2,7 @@
 """将 QuestionnaireSpec 渲染为官方产品 survey-zh-default 的 Markdown 问卷正文。
 
 用法：
-    python scripts/render_markdown.py spec.yaml [-o questionnaire.md]
+    python3 scripts/render_markdown.py spec.yaml [-o questionnaire.md]
         [--codes default|explicit|ids] [--other-code 98] [--none-code 99]
         [--design-table design.md] [--cleaning-rules cleaning.md] [--force]
 

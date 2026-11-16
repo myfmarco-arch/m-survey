@@ -17,7 +17,7 @@ from typing import Any, Iterable
 try:
     import yaml
 except ImportError:  # pragma: no cover
-    sys.exit("缺少依赖 PyYAML。请运行：pip install -r requirements.txt")
+    sys.exit("缺少依赖 PyYAML。请运行：python3 -m pip install -r requirements.txt")
 
 ROOT = Path(__file__).resolve().parent.parent
 SCHEMA_PATH = ROOT / "schemas" / "questionnaire-spec.schema.json"

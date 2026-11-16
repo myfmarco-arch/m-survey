@@ -25,7 +25,7 @@ product: survey-en-minimal
 Then render the example spec:
 
 ```bash
-python scripts/render_markdown.py examples/expense-app-autocat/spec.yaml --product survey-en-minimal
+python3 scripts/render_markdown.py examples/expense-app-autocat/spec.yaml --product survey-en-minimal
 ```
 
 The output uses English headings, `(ALL)`, `required` / `optional`, and codes `90` / `91`.

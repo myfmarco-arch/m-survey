@@ -93,7 +93,7 @@ QuestionnaireSpec 是问卷语义的唯一来源，有 [JSON Schema](../schemas/
 合同名 `m-survey-contract-v1` 是主版本；具体内容由 `contracts/manifest.json` 锁定：
 
 - `revision`：形如 `2026-11-11.1`，每次修改合同或 schema 前移。
-- `files`：每份合同的 sha256，`python scripts/contract_manifest.py check` 校验。
+- `files`：每份合同的 sha256，`python3 scripts/contract_manifest.py check` 校验。
 - 声明兼容时写 `m-survey-contract-v1@<revision>`，避免“兼容 v1”说不清是哪个时点。
 
 0.x 版本期间，合同仍可能调整。调整会前移 revision 并写入 [CHANGELOG](../CHANGELOG.md)，同时说明迁移方法。

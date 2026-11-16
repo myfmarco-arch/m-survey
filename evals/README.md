@@ -39,18 +39,18 @@ overlay 的用例放在 overlay 自己的目录中，例如 `references/overlays
 
 ```bash
 # 1. 生成运行目录（默认每个用例 3 次）
-python scripts/run_evals.py prepare --suite conformance --runs 3 --out evals/runs/2026-11-11
+python3 scripts/run_evals.py prepare --suite conformance --runs 3 --out evals/runs/2026-11-11
 
 # 2a. 自动生成回答：命令从 stdin 读提示、向 stdout 写回答
-python scripts/run_evals.py generate --out evals/runs/2026-11-11 --cmd "claude -p"
+python3 scripts/run_evals.py generate --out evals/runs/2026-11-11 --cmd "claude -p"
 # 2b. 或者手动：按每个 run 目录中的 setup.md 准备，把 prompt.md 发给 Skill，回答保存为 response.md
 
 # 3a. 模型评审
-python scripts/run_evals.py judge --out evals/runs/2026-11-11 --cmd "claude -p"
+python3 scripts/run_evals.py judge --out evals/runs/2026-11-11 --cmd "claude -p"
 # 3b. 或者人工评审：复制 judgement.template.json 为 judgement.json，逐项填写 true / false 和证据
 
 # 4. 计算结果
-python scripts/run_evals.py report --out evals/runs/2026-11-11 --model "<被测模型>" --judge-label "<评审方式>"
+python3 scripts/run_evals.py report --out evals/runs/2026-11-11 --model "<被测模型>" --judge-label "<评审方式>"
 ```
 
 `generate` 会为每次运行创建隔离工作区，把 Skill 复制到 `--install-path`（默认 `.claude/skills/m-survey`），按用例的 `setup` 修改工作区内的 `product.yaml`，并且不复制 `evals/` 和 `tests/`。被测命令在该工作区中运行。
@@ -71,16 +71,16 @@ python scripts/run_evals.py report --out evals/runs/2026-11-11 --model "<被测�
 
 ```bash
 # 1. 准备。--reference-dir 可选：放人工撰写的参考交付物，文件名为 <用例 id>.md
-python scripts/run_evals.py quality prepare --runs 3 --out evals/runs/q-2026-11-14
+python3 scripts/run_evals.py quality prepare --runs 3 --out evals/runs/q-2026-11-14
 
 # 2. 生成：skill 条件安装本 Skill，baseline 条件使用空工作区
-python scripts/run_evals.py quality generate --out evals/runs/q-2026-11-14 --cmd "claude -p"
+python3 scripts/run_evals.py quality generate --out evals/runs/q-2026-11-14 --cmd "claude -p"
 
 # 3. 盲评
-python scripts/run_evals.py quality judge --out evals/runs/q-2026-11-14 --cmd "claude -p"
+python3 scripts/run_evals.py quality judge --out evals/runs/q-2026-11-14 --cmd "claude -p"
 
 # 4. 报告：各条件各维度均分、skill − baseline 差值、胜平负
-python scripts/run_evals.py quality report --out evals/runs/q-2026-11-14 --model "<被测模型>" --judge-label "<评审方式>"
+python3 scripts/run_evals.py quality report --out evals/runs/q-2026-11-14 --model "<被测模型>" --judge-label "<评审方式>"
 ```
 
 团队可以把自己写过的真实问卷整理成参考交付物，放在仓库外的目录中，通过 `--reference-dir` 加入比较。这样能看出 Skill 与团队人写版本的差距。参考交付物不要提交到公开仓库。

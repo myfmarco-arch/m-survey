@@ -13,19 +13,19 @@
   report    按 evals/scoring.md 计算单次、用例和评测组结果，写出 report.md 和 results.json。
 
 示例：
-  python scripts/run_evals.py list
-  python scripts/run_evals.py prepare --suite conformance --runs 3 --out evals/runs/demo
-  python scripts/run_evals.py generate --out evals/runs/demo --cmd "claude -p"
-  python scripts/run_evals.py judge --out evals/runs/demo --cmd "claude -p"
-  python scripts/run_evals.py report --out evals/runs/demo
+  python3 scripts/run_evals.py list
+  python3 scripts/run_evals.py prepare --suite conformance --runs 3 --out evals/runs/demo
+  python3 scripts/run_evals.py generate --out evals/runs/demo --cmd "claude -p"
+  python3 scripts/run_evals.py judge --out evals/runs/demo --cmd "claude -p"
+  python3 scripts/run_evals.py report --out evals/runs/demo
 
 质量评测（quality 组）使用单独的子命令：同一需求分别在“安装 Skill”和“不安装 Skill”的工作区中生成，
 可另加人工撰写的参考交付物，打乱标识后由评审按 evals/quality/rubric.md 逐维打分，最后比较各条件的得分。
 
-  python scripts/run_evals.py quality prepare --runs 3 --out evals/runs/q1 [--reference-dir 参考目录]
-  python scripts/run_evals.py quality generate --out evals/runs/q1 --cmd "claude -p"
-  python scripts/run_evals.py quality judge --out evals/runs/q1 --cmd "claude -p"
-  python scripts/run_evals.py quality report --out evals/runs/q1
+  python3 scripts/run_evals.py quality prepare --runs 3 --out evals/runs/q1 [--reference-dir 参考目录]
+  python3 scripts/run_evals.py quality generate --out evals/runs/q1 --cmd "claude -p"
+  python3 scripts/run_evals.py quality judge --out evals/runs/q1 --cmd "claude -p"
+  python3 scripts/run_evals.py quality report --out evals/runs/q1
 
 被测命令和评审命令需要你自己确认可用；脚本只负责传入提示、保存输出和计算结果。
 """

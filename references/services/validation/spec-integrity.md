@@ -8,7 +8,7 @@
 - 有代码执行环境时，先把 QuestionnaireSpec 写成 YAML，再运行：
 
 ```bash
-python scripts/validate_spec.py path/to/spec.yaml
+python3 scripts/validate_spec.py path/to/spec.yaml
 ```
 
 - 没有代码执行环境时，由模型按下表逐项检查，结果格式相同。
@@ -51,7 +51,7 @@ python scripts/validate_spec.py path/to/spec.yaml
 审核从其他工具导出的问卷（例如在线文档、表格或其他平台的导出稿）时，先运行宽松检查：
 
 ```bash
-python scripts/lint_text.py questionnaire.md
+python3 scripts/lint_text.py questionnaire.md
 ```
 
 它不依赖题目格式，只检查公式残留、删除线、区间重叠、量表方向不一致、重复题号和引用不存在的题号。结果是提示，需要人工确认；完整检查仍需把问卷整理成 QuestionnaireSpec。

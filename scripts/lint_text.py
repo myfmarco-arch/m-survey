@@ -2,7 +2,7 @@
 """宽松检查：不依赖题目格式，审核从在线文档、表格或其他平台导出的问卷。
 
 用法：
-    python scripts/lint_text.py questionnaire.md [--format text|yaml|json]
+    python3 scripts/lint_text.py questionnaire.md [--format text|yaml|json]
 
 检查内容：
 - spec.text-residue            表格公式错误（#VALUE! 等）和删除线 ~~ 残留

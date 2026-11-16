@@ -45,7 +45,6 @@ Skill 目录名必须是 `m-survey`，与 `SKILL.md` 中的 `name` 一致。
 
 **Claude Code**：把本仓库放到 `~/.claude/skills/m-survey/`（所有项目可用）或项目内的 `.claude/skills/m-survey/`。之后直接描述问卷任务即可自动触发，也可以输入 `/m-survey`。
 
-目录名必须与 `SKILL.md` 的 `name` 一致，即小写的 `m-survey`。仓库当前的文件夹名是 `M-survey`（大写 M），直接放进去不会被识别，需要重命名。macOS 的文件系统通常不区分大小写，改名时要确认大小写真的生效。
 
 **Claude 应用**：打包为 zip 后在设置的 Skills 页面上传（入口位置以当前版本为准）。在仓库中运行 `git archive --format=zip --prefix=m-survey/ -o m-survey.zip HEAD` 可以得到不含本地缓存的压缩包。
 
@@ -54,7 +53,7 @@ Skill 目录名必须是 `m-survey`，与 `SKILL.md` 中的 `name` 一致。
 Skill 本身只需要文本文件（Markdown、YAML、CSV、JSON），不需要安装任何依赖。`scripts/` 中的检查脚本是可选的，需要 Python 3.9+：
 
 ```bash
-pip install -r requirements.txt
+python3 -m pip install -r requirements.txt
 ```
 
 ## 定制成你团队的版本
@@ -79,15 +78,15 @@ overlay 可以扩展或替换写作规范、问卷格式、默认编码和工作
 
 | 检查 | 命令 | 说明 |
 |---|---|---|
-| 仓库一致性 | `python scripts/check_repo.py` | 链接、版本、CSV、规则定义、评测结构、overlay、示例 |
-| 问卷规格 | `python scripts/validate_spec.py spec.yaml` | 题号、引用、排他、编码、使用资格、占位符 |
-| 问卷文稿 | `python scripts/check_render.py questionnaire.md --spec spec.yaml` | 格式和与规格的一致性 |
-| 时长估算 | `python scripts/estimate_duration.py spec.yaml` | 典型路径和最长路径；参数需用历史数据校准 |
-| 跨波对比 | `python scripts/diff_waves.py previous.yaml spec.yaml` | 可比、需加注、不可比清单 |
-| 外部问卷 | `python scripts/lint_text.py questionnaire.md` | 公式残留、区间重叠、量表方向、重复题号 |
-| 脚本测试 | `python -m unittest discover -s tests` | 检查脚本本身的回归测试 |
-| 行为评测 | `python scripts/run_evals.py …` | 用真实模型运行 Skill 并评审，见 [evals/README.md](evals/README.md) |
-| 质量评测 | `python scripts/run_evals.py quality …` | 装与不装 Skill 各生成一份，盲评比较 8 个质量维度 |
+| 仓库一致性 | `python3 scripts/check_repo.py` | 链接、版本、CSV、规则定义、评测结构、overlay、示例 |
+| 问卷规格 | `python3 scripts/validate_spec.py spec.yaml` | 题号、引用、排他、编码、使用资格、占位符 |
+| 问卷文稿 | `python3 scripts/check_render.py questionnaire.md --spec spec.yaml` | 格式和与规格的一致性 |
+| 时长估算 | `python3 scripts/estimate_duration.py spec.yaml` | 典型路径和最长路径；参数需用历史数据校准 |
+| 跨波对比 | `python3 scripts/diff_waves.py previous.yaml spec.yaml` | 可比、需加注、不可比清单 |
+| 外部问卷 | `python3 scripts/lint_text.py questionnaire.md` | 公式残留、区间重叠、量表方向、重复题号 |
+| 脚本测试 | `python3 -m unittest discover -s tests` | 检查脚本本身的回归测试 |
+| 行为评测 | `python3 scripts/run_evals.py …` | 用真实模型运行 Skill 并评审，见 [evals/README.md](evals/README.md) |
+| 质量评测 | `python3 scripts/run_evals.py quality …` | 装与不装 Skill 各生成一份，盲评比较 8 个质量维度 |
 
 结构类检查在 GitHub Actions 中自动运行。行为评测和质量评测需要调用模型，在本地运行。
 

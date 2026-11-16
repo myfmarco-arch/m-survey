@@ -36,4 +36,4 @@
 | `adapter.data-contract` | 编码方案不与已有数据合同冲突 | `error` |
 | `adapter.no-placeholder` | 最终正文没有“待定”“待确认”或未解释占位符（同 `spec.no-placeholder`） | `error` |
 
-有代码执行环境时，运行 `python scripts/check_render.py questionnaire.md --spec spec.yaml` 检查 `adapter.semantic-preserved`。
+有代码执行环境时，运行 `python3 scripts/check_render.py questionnaire.md --spec spec.yaml` 检查 `adapter.semantic-preserved`。

@@ -34,10 +34,10 @@
 ## 复现
 
 ```bash
-python scripts/run_evals.py prepare --suite conformance --runs 3 --out evals/runs/<日期>
+python3 scripts/run_evals.py prepare --suite conformance --runs 3 --out evals/runs/<日期>
 # 用被测模型逐条生成回答（run_evals generate，或按 run 目录里的 setup.md 人工执行）
-python scripts/run_evals.py judge  --out evals/runs/<日期>
-python scripts/run_evals.py report --out evals/runs/<日期> --model "<被测模型>" --judge-label "<评审方式>"
+python3 scripts/run_evals.py judge  --out evals/runs/<日期>
+python3 scripts/run_evals.py report --out evals/runs/<日期> --model "<被测模型>" --judge-label "<评审方式>"
 ```
 
 把 `results.json` 复制到本目录并补齐 `baseline_type`、`contract_revision`、`declares_compatibility` 和 `caveats` 字段。

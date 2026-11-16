@@ -19,7 +19,7 @@
 2. 在“验证规则”章节用规则表定义 `method.<id>.*` 规则和默认严重程度。
 3. 在 `product.yaml` 的 `modules.methods` 和 [方法索引](references/modules/methods/index.md) 中登记。
 4. 在 `evals/modules/cases.yaml` 中至少增加一个 `positive` 用例和一个 `boundary` 或 `negative` 用例，`module` 填方法 id。
-5. 运行 `python scripts/check_repo.py`。
+5. 运行 `python3 scripts/check_repo.py`。
 
 ## 新增或修改验证规则
 
@@ -42,7 +42,7 @@
 修改任何合同文件后必须重新生成清单，否则 CI 会失败：
 
 ```bash
-python scripts/contract_manifest.py write    # 前移 revision 并记录新的校验和
+python3 scripts/contract_manifest.py write    # 前移 revision 并记录新的校验和
 ```
 
 不要在分叉里修改 `SKILL.md` 或 `product.yaml` 来做定制；写 `local.yaml`。
@@ -70,9 +70,9 @@ python scripts/contract_manifest.py write    # 前移 revision 并记录新的�
 以下检查在 GitHub Actions 中自动运行，提交前也请在本地运行：
 
 ```bash
-pip install -r requirements.txt
-python scripts/check_repo.py
-python -m unittest discover -s tests
+python3 -m pip install -r requirements.txt
+python3 scripts/check_repo.py
+python3 -m unittest discover -s tests
 ```
 
 `check_repo.py` 覆盖：内部链接、YAML 解析、CSV 列数和 ID 唯一、跨文件 ID 和标准状态一致、方法模块章节、规则定义唯一且被引用的规则都存在、评测用例结构和方法覆盖、overlay 格式、示例与渲染结果一致、质量评测用例与评审量表一致、时长参数文件完整、版本号一致、无本地绝对路径。

@@ -2,7 +2,7 @@
 """比较两波问卷规格，列出可比、需加注和不可比的题目。
 
 用法：
-    python scripts/diff_waves.py previous.yaml current.yaml [--map Q3:Q4 ...]
+    python3 scripts/diff_waves.py previous.yaml current.yaml [--map Q3:Q4 ...]
         [--codes default|explicit] [--format text|yaml|json]
 
 按题号对应两波题目；题号变了时用 --map 旧题号:新题号。逐题比较：题型和量表、题干、选项文字、

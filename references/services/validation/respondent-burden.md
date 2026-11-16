@@ -28,7 +28,7 @@
 有代码执行环境时运行：
 
 ```bash
-python scripts/estimate_duration.py spec.yaml
+python3 scripts/estimate_duration.py spec.yaml
 ```
 
 ## 交付格式

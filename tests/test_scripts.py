@@ -1,4 +1,4 @@
-"""脚本回归测试。运行：python -m unittest discover -s tests"""
+"""脚本回归测试。运行：python3 -m unittest discover -s tests"""
 from __future__ import annotations
 
 import copy

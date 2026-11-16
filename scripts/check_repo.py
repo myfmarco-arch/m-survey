@@ -2,7 +2,7 @@
 """仓库一致性检查。CONTRIBUTING.md 中“发布前检查”的自动化版本。
 
 用法：
-    python scripts/check_repo.py
+    python3 scripts/check_repo.py
 
 检查内容：YAML 可解析、product.yaml 路径、版本一致、SKILL.md 元数据、Markdown 内链、
 CSV 结构和跨文件 ID、方法模块章节、规则标识唯一且被引用的规则都有定义、评测用例结构和覆盖、

@@ -55,4 +55,4 @@
 
 此外，渲染后的问卷仍需满足 [规格结构完整性](../../services/validation/spec-integrity.md) 中的题号唯一、引用有效、编码唯一、排他、开放文本和无占位符规则。
 
-有代码执行环境时，运行 `python scripts/check_render.py questionnaire.md` 检查以上规则；同时提供 `--spec` 时还检查与 QuestionnaireSpec 的一致性。`format.*` 规则只属于官方产品回归，不属于框架兼容性要求。
+有代码执行环境时，运行 `python3 scripts/check_render.py questionnaire.md` 检查以上规则；同时提供 `--spec` 时还检查与 QuestionnaireSpec 的一致性。`format.*` 规则只属于官方产品回归，不属于框架兼容性要求。

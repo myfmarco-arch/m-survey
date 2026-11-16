@@ -2,7 +2,7 @@
 """检查官方产品 survey-zh-default 格式的 Markdown 问卷。
 
 用法：
-    python scripts/check_render.py questionnaire.md [--spec spec.yaml] [--codes default|explicit|ids]
+    python3 scripts/check_render.py questionnaire.md [--spec spec.yaml] [--codes default|explicit|ids]
         [--format text|yaml|json]
 
 不提供 --spec 时，检查格式、题号引用、编码唯一、排他、开放填空和占位符。

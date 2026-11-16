@@ -2,8 +2,8 @@
 """生成和校验合同清单 contracts/manifest.json。
 
 用法：
-    python scripts/contract_manifest.py check      # 校验清单与文件一致（CI 与 check_repo 使用）
-    python scripts/contract_manifest.py write      # 改动合同后重新生成，并把 revision 前移
+    python3 scripts/contract_manifest.py check      # 校验清单与文件一致（CI 与 check_repo 使用）
+    python3 scripts/contract_manifest.py write      # 改动合同后重新生成，并把 revision 前移
 
 清单锁定合同版本：每个文件的 sha256 加一个 revision 标识。分叉版本声明兼容时应写
 `m-survey-contract-v1@<revision>`，这样“兼容 v1”能指向具体时点，而不只是一个还在变动的名字。
@@ -60,7 +60,7 @@ def build(revision: str | None = None) -> dict:
         "contract": "m-survey-contract-v1",
         "revision": revision,
         "declaring_compatibility": f"m-survey-contract-v1@{revision}",
-        "note": "修改 contracts、schema 或 conformance 评测后运行 python scripts/contract_manifest.py write；"
+        "note": "修改 contracts、schema 或 conformance 评测后运行 python3 scripts/contract_manifest.py write；"
                 "内容变化时 revision 自动前移为 YYYY-MM-DD.N。",
         "files": files,
     }
@@ -69,7 +69,7 @@ def build(revision: str | None = None) -> dict:
 def check() -> list[str]:
     problems: list[str] = []
     if not MANIFEST.exists():
-        return [f"缺少 {MANIFEST.relative_to(ROOT)}，运行 python scripts/contract_manifest.py write 生成"]
+        return [f"缺少 {MANIFEST.relative_to(ROOT)}，运行 python3 scripts/contract_manifest.py write 生成"]
     data = json.loads(MANIFEST.read_text(encoding="utf-8"))
     if data.get("contract") != "m-survey-contract-v1":
         problems.append("manifest.contract 必须是 m-survey-contract-v1")
@@ -80,7 +80,7 @@ def check() -> list[str]:
         if rel not in files:
             problems.append(f"manifest 未登记 {rel}")
         elif files[rel] != digest(rel):
-            problems.append(f"{rel} 自 manifest 生成后已修改，运行 python scripts/contract_manifest.py write")
+            problems.append(f"{rel} 自 manifest 生成后已修改，运行 python3 scripts/contract_manifest.py write")
     for rel in set(files) - set(FILES):
         problems.append(f"manifest 登记的 {rel} 不在合同文件列表中")
     return problems

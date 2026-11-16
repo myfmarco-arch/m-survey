@@ -90,11 +90,11 @@ metadata:
 有代码执行环境时使用。脚本位于本 Skill 目录（`SKILL.md` 所在目录，下文记为 `<skill>`）的 `scripts/` 中，用绝对路径调用。没有代码执行环境时，由模型按对应规则逐项检查。
 
 1. 照 [完整示例](examples/expense-app-autocat/spec.yaml) 把问卷写成 QuestionnaireSpec YAML，写明 `meta.channel`、`purpose.analysis`、`option_source` 和 `quality.cleaning_rules`。`validate_spec.py` 报 `spec.schema` 错误时，再查 [schema](schemas/questionnaire-spec.schema.json)。
-2. `python <skill>/scripts/validate_spec.py spec.yaml`：修复全部 `error`，逐条处理 `warning`。
-3. `python <skill>/scripts/estimate_duration.py spec.yaml`：得到典型路径和最长路径，写进简报和卷首语。
-4. `python <skill>/scripts/render_markdown.py spec.yaml --codes <参数> -o questionnaire.md`；题目设计表和清洗规则用 `--design-table design.md --cleaning-rules cleaning.md` 单独写出，贴进研究简报与方案。编码参数：官方默认编码且没有已回收数据用 `default`；已回收问卷或 spec 写明全部编码用 `explicit`；平台生成编码用 `ids`。手写问卷时改用 `check_render.py questionnaire.md --spec spec.yaml --codes <参数>`。
-5. 与上一波比较时：`python <skill>/scripts/diff_waves.py previous.yaml spec.yaml`。
-6. 审核从其他工具导出的问卷时：`python <skill>/scripts/lint_text.py questionnaire.md`。
+2. `python3 <skill>/scripts/validate_spec.py spec.yaml`：修复全部 `error`，逐条处理 `warning`。
+3. `python3 <skill>/scripts/estimate_duration.py spec.yaml`：得到典型路径和最长路径，写进简报和卷首语。
+4. `python3 <skill>/scripts/render_markdown.py spec.yaml --codes <参数> -o questionnaire.md`；题目设计表和清洗规则用 `--design-table design.md --cleaning-rules cleaning.md` 单独写出，贴进研究简报与方案。编码参数：官方默认编码且没有已回收数据用 `default`；已回收问卷或 spec 写明全部编码用 `explicit`；平台生成编码用 `ids`。手写问卷时改用 `check_render.py questionnaire.md --spec spec.yaml --codes <参数>`。
+5. 与上一波比较时：`python3 <skill>/scripts/diff_waves.py previous.yaml spec.yaml`。
+6. 审核从其他工具导出的问卷时：`python3 <skill>/scripts/lint_text.py questionnaire.md`。
 
 问卷格式被 overlay 替换时，跳过第 4 步，按 overlay 的格式手写问卷。脚本只检查结构、逻辑和可计算的规则，不判断方法前提、证据边界、题序之外的污染和隐私风险。中间 YAML 和脚本输出不放入最终问卷正文。
 

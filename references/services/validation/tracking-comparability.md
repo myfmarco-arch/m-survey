@@ -25,7 +25,7 @@
 有代码执行环境，且两波都有 QuestionnaireSpec 时运行：
 
 ```bash
-python scripts/diff_waves.py previous-spec.yaml current-spec.yaml
+python3 scripts/diff_waves.py previous-spec.yaml current-spec.yaml
 ```
 
 题号在两波之间变了时，用 `--map 旧题号:新题号` 对应。

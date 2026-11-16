@@ -2,7 +2,7 @@
 """估算问卷时长：典型路径和最长路径。
 
 用法：
-    python scripts/estimate_duration.py spec.yaml [--params timing.yaml] [--target 10] [--format text|json]
+    python3 scripts/estimate_duration.py spec.yaml [--params timing.yaml] [--target 10] [--format text|json]
 
 每道题的时间 = 阅读时间（题干、选项、矩阵行的字数 ÷ 阅读速度）+ 作答时间（按题型）。
 典型路径按每题预计看到的比例（expected_share）和预计循环次数（expected_loops）加权；

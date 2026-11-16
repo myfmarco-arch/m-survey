@@ -2,7 +2,7 @@
 """检查 QuestionnaireSpec YAML 的结构、逻辑引用和可机器判断的测量规则。
 
 用法：
-    python scripts/validate_spec.py path/to/spec.yaml [--format text|yaml|json]
+    python3 scripts/validate_spec.py path/to/spec.yaml [--format text|yaml|json]
 
 输出遵循 references/contracts/validation-contract.md 的 ValidationResult 格式。
 存在 error 时退出码为 1。脚本只覆盖 spec.* 和部分 measurement.*、evidence.*、quality.*、burden.* 规则，
@@ -55,7 +55,7 @@ def schema_check(spec: dict, report: Report) -> bool:
     try:
         import jsonschema
     except ImportError:
-        sys.exit("缺少依赖 jsonschema。请运行：pip install -r requirements.txt")
+        sys.exit("缺少依赖 jsonschema。请运行：python3 -m pip install -r requirements.txt")
     validator = jsonschema.Draft7Validator(load_schema())
     ok = True
     for err in sorted(validator.iter_errors(spec), key=lambda e: list(e.absolute_path)):

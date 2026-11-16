@@ -18,14 +18,14 @@
 在仓库根目录运行：
 
 ```bash
-pip install -r requirements.txt
-python scripts/validate_spec.py examples/expense-app-autocat/spec.yaml
-python scripts/render_markdown.py examples/expense-app-autocat/spec.yaml --codes default \
+python3 -m pip install -r requirements.txt
+python3 scripts/validate_spec.py examples/expense-app-autocat/spec.yaml
+python3 scripts/render_markdown.py examples/expense-app-autocat/spec.yaml --codes default \
     -o examples/expense-app-autocat/03-questionnaire.md
 # 需要题目设计表和清洗规则时，另写到临时文件再贴进方案
-python scripts/render_markdown.py examples/expense-app-autocat/spec.yaml --codes default \
+python3 scripts/render_markdown.py examples/expense-app-autocat/spec.yaml --codes default \
     --design-table /tmp/design.md --cleaning-rules /tmp/cleaning.md
-python scripts/check_render.py examples/expense-app-autocat/03-questionnaire.md --spec examples/expense-app-autocat/spec.yaml
+python3 scripts/check_render.py examples/expense-app-autocat/03-questionnaire.md --spec examples/expense-app-autocat/spec.yaml
 ```
 
 本示例只显式写了“不记得”的编码 97，其余选项依赖官方默认编码，所以用默认的 `--codes default`。用 `--codes explicit` 会逐题报 `spec.code-required`：那是“已回收问卷或编码全部写死”时才用的模式，不是示例出错。
