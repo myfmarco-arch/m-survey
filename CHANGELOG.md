@@ -2,7 +2,7 @@
 
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。0.x 期间，合同仍可能调整；调整会在此说明迁移方法。
 
-## [0.6.0] - 2026-11-14
+## [0.6.0] - 2026-11-15
 
 本版本的目标从“不犯错”转向“写得好”：补上资深研究者写问卷时的工艺，并增加能衡量问卷质量的评测。
 
@@ -57,7 +57,7 @@
 
 ### 兼容性
 
-- 合同 revision 前移到 `2026-11-15.1`（验证合同增加三个规则域，schema 增加可选字段）。已有 spec 不需修改即可通过 schema。
+- 合同 revision 前移到 `2026-11-15.2`（验证合同增加三个规则域，schema 增加可选字段）。已有 spec 不需修改即可通过 schema。
 - `validate_spec.py` 会对缺少清洗规则、多选题缺少选项来源等情况给出新的 `warning`，已有 spec 需要补充字段才能做到零提示。
 - 第三方产品的 `profile.yaml` 使用新特性时，需要补充 `tokens.analysis_tag`、`quality_*`、`cleaning_action_*`、`not_stated`，`headings.cleaning`、`headings.design`，`tables.cleaning`、`tables.design` 和 `option_source_labels`；不使用时不受影响。
 - 本版本没有新的行为基线，不声明兼容。质量评测尚未用真实模型跑过正式基线。
