@@ -3,7 +3,7 @@ name: m-survey
 description: 设计、修改和审核中文定量用户研究问卷，并提供定量方法咨询。从业务决策出发选择方法、规划样本，写出题序不污染、选项有来源、带质量控制和时长估算、可直接投放和分析的问卷；也能审核从其他工具导出的问卷，检查跨波次可比性。适用于满意度与体验诊断、版本上线和卖点复盘、购买与价格研究、需求优先级（KANO、MaxDiff、联合分析）、品牌健康追踪、概念和视觉测试、命名研究和用户招募甄别；不用于普通报名表、纯定性访谈大纲、已回收数据的清洗与统计分析或问卷平台编程。
 license: MIT
 metadata:
-  version: 0.6.0
+  version: 0.6.1
   contract: m-survey-contract-v1
 ---
 
@@ -31,8 +31,9 @@ metadata:
 5. **数据可信。** 按投放渠道设置甄别排除、问卷内检测和回收前固定的清洗规则。
 6. **时长属实。** 估算典型路径和最长路径；卷首语承诺的时长与估算一致；超时时给出删减清单。
 7. **证据不越界。** 只让经历过的人评价体验；不把态度当行为、相关当因果、便利样本当总体；不把工作译文包装成正式量表。
-8. **追踪可比。** 与上一波比较前先拿到原问卷，列出可比、需加注和不可比的题目。
-9. **交付分两份，都短。** 研究简报与方案给需求方，问卷给编程和平台，各自内容见下文“交付”。两份都不写验证记录、规则标识、假设清单和方法教程。
+8. **招募可追溯。** 先写招募需求表，区分直接甄别、事后判断和信息预采集；硬配额与软配额分开，联系方式在同意后独立收集。
+9. **追踪可比。** 与上一波比较前先拿到原问卷，列出可比、需加注和不可比的题目。
+10. **交付分两份，都短。** 研究简报与方案给需求方，问卷给编程和平台，各自内容见下文“交付”。两份都不写验证记录、规则标识、假设清单和方法教程。
 
 ## 工作模式
 
@@ -55,6 +56,7 @@ metadata:
 | 特殊方法（KANO、MaxDiff、联合分析、价格研究、品牌追踪） | [方法索引](references/modules/methods/index.md) 指向的单个方法文件 |
 | 样本量或配额 | [样本规划](references/services/sample-planning.md)、[样本完整性](references/services/validation/sampling-integrity.md) |
 | 甄别排除、注意力检测、清洗规则 | [数据质量控制](references/services/validation/data-quality.md) |
+| 用户招募和甄别问卷 | 当前产品的[招募案例](references/products/survey-zh-default/cases/recruitment.md)和[问卷模板](references/products/survey-zh-default/templates.md)，并结合[数据质量控制](references/services/validation/data-quality.md) |
 | 时长估算和手机端负担 | [受访负担](references/services/validation/respondent-burden.md) |
 | 与上一波或历史结果比较 | [跨波次可比性](references/services/validation/tracking-comparability.md) |
 | 隐私、敏感信息、未成年人或跨境 | [隐私基线](references/services/validation/privacy-baseline.md) |

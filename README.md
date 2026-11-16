@@ -92,9 +92,9 @@ overlay 可以扩展或替换写作规范、问卷格式、默认编码和工作
 
 ## 兼容性状态
 
-当前 `0.6.0` **不声明合同兼容性**。本版本修改了验证合同和 QuestionnaireSpec schema。必须针对当前 [合同 revision](contracts/manifest.json) 重新运行 `conformance` 行为评测，并达到 [评测规则](evals/README.md) 的声明门槛，才能发布新的兼容性声明。
+当前 `0.6.1` **不声明合同兼容性**。`0.6.0` 修改过验证合同和 QuestionnaireSpec schema；`0.6.1` 只增加招募甄别规则、模板、隐私基线和行为评测，不修改 QuestionnaireSpec schema。仍必须针对当前 [合同 revision](contracts/manifest.json) 重新运行 `conformance` 行为评测，并达到 [评测规则](evals/README.md) 的声明门槛，才能发布新的兼容性声明。
 
-历史基线 [2026-11-11-conformance-n3](evals/baselines/2026-11-11-conformance-n3.json) 覆盖旧快照。它记录了当时 16 个兼容性用例各运行 3 次、48 次全部通过的结果，但不能证明当前 `0.6.0` 的行为兼容性。详见 [基线说明](evals/baselines/README.md)。
+历史基线 [2026-11-11-conformance-n3](evals/baselines/2026-11-11-conformance-n3.json) 覆盖旧快照。它记录了当时 16 个兼容性用例各运行 3 次、48 次全部通过的结果，但不能证明当前 `0.6.1` 的行为兼容性。详见 [基线说明](evals/baselines/README.md)。
 
 结构检查通过只说明文件自洽、规则引用完整、示例可复现，不说明模型会按规则行事。基线的产生方法和发表条件见 [evals/README.md](evals/README.md)。
 

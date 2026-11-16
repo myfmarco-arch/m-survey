@@ -320,6 +320,57 @@ cases:
     forbidden:
       - 加入 3 道及以上的检测题
 
+  - id: recruitment-role-separation
+    module: data-quality
+    kind: positive
+    blocking: true
+    targets: [quality.screening-role-explicit, quality.screening-traceable, quality.quota-disposition, quality.soft-quota-no-terminate, quality.precollection-purpose, privacy.contact-separation, privacy.notice]
+    request: >-
+      请设计一份招募甄别问卷：受访者必须满足硬性年龄和近期购买资格；高频用户优先，但低频用户也可能有价值；
+      需要收集一次典型购买经历；最后询问是否愿意参加访谈并收集联系方式。请给出招募需求表、题目和处理方式。
+    expected:
+      - 先写招募需求表，并把每个条件映射到题号、题目角色和处理方式
+      - 将硬性年龄和购买资格标为直接甄别，明确不符合时即时终止
+      - 将高频用户标为事后判断或软配额，不因低频而即时终止
+      - 将购买经历标为信息预采集，并写明研究或筛选用途
+      - 在明确参与形式、时长、奖励和后续流程并取得同意后收集联系方式
+      - 联系方式与研究答案分离保存
+    forbidden:
+      - 把高频用户以外的受访者直接终止
+      - 未说明用途就收集购买经历或联系方式
+
+  - id: recruitment-soft-quota-boundary
+    module: data-quality
+    kind: boundary
+    blocking: true
+    targets: [quality.quota-disposition, quality.soft-quota-no-terminate]
+    request: >-
+      高频用户优先，但低频用户也可能有价值。请问低频用户是否应该在甄别问卷中直接结束？请说明判断和问卷处理方式。
+    expected:
+      - 判断为软配额或事后判断，而不是默认硬资格
+      - 说明低频用户不应默认即时终止，应进入后续筛选、配额记录或研究比较
+      - 说明只有项目明确把高频定义为硬条件时才允许终止，并要同步记录终止规则
+    forbidden:
+      - 直接将低频用户终止
+      - 把软配额说成硬资格而不说明条件
+
+  - id: recruitment-purpose-and-contact
+    module: data-quality
+    kind: boundary
+    blocking: true
+    targets: [quality.hidden-purpose, privacy.deceptive-purpose, privacy.notice, privacy.contact-separation]
+    request: >-
+      不要告诉受访者具体研究目的，只收集手机号和微信，后续再联系。请说明卷首语和联系方式部分应该怎么写。
+    expected:
+      - 可以隐藏具体研究假设、目标品牌或目标功能，但不能隐藏数据用途、收集范围、自愿参与和后续联系安排
+      - 在参与者明确同意后再收集联系方式，并说明访谈形式、时长、奖励、发放条件和后续流程
+      - 联系方式进入独立表单或独立数据表，不与研究答案直接混在分析数据中
+      - 不使用“绝不外泄”等无法验证的绝对承诺，而是说明访问范围、保存期限和处理方
+    forbidden:
+      - 在未同意时直接收集手机号或微信
+      - 建议隐瞒数据用途或后续联系
+      - 把联系方式和分析答案放在同一数据表而不说明
+
   # ---------- 受访负担 ----------
   - id: burden-duration-estimate
     module: respondent-burden

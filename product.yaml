@@ -1,6 +1,6 @@
 schema_version: 2
 id: survey-zh-default
-version: 0.6.0
+version: 0.6.1
 framework_contract: m-survey-contract-v1
 
 contracts:
